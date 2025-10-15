@@ -174,7 +174,7 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
             transition={{ delay: 0.5 }}
             className="absolute bottom-32 left-0 right-0 px-5 pb-3"
           >
-            <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-4 shadow-lg border border-pink-100">
+            <div className="bg-white/98 rounded-3xl p-4 shadow-lg border border-pink-100">
               <p className="text-xs text-gray-400 mb-3 px-1">💡 Suggested questions</p>
               <div className="flex flex-wrap gap-2">
                 {quickReplies.map((reply, index) => (

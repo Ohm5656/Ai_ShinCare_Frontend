@@ -237,6 +237,11 @@
   ::-webkit-scrollbar-thumb:hover {
     background: var(--pink-400);
   }
+  
+  /* Hide scrollbar for horizontal scroll areas */
+  .overflow-x-auto::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /**
@@ -297,18 +302,27 @@
   }
 }
 
-/* Cute animations */
+/* Cute animations - Optimized for mobile performance */
 @layer utilities {
+  /* Performance optimization for all animations */
+  .animate-bounce-soft,
+  .animate-wiggle,
+  .animate-float {
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+  
   .animate-bounce-soft {
     animation: bounce-soft 2s ease-in-out infinite;
   }
   
   @keyframes bounce-soft {
     0%, 100% {
-      transform: translateY(0);
+      transform: translateY(0) translateZ(0);
     }
     50% {
-      transform: translateY(-10px);
+      transform: translateY(-10px) translateZ(0);
     }
   }
   
@@ -318,10 +332,10 @@
   
   @keyframes wiggle {
     0%, 100% {
-      transform: rotate(-3deg);
+      transform: rotate(-3deg) translateZ(0);
     }
     50% {
-      transform: rotate(3deg);
+      transform: rotate(3deg) translateZ(0);
     }
   }
   
@@ -331,10 +345,10 @@
   
   @keyframes float {
     0%, 100% {
-      transform: translateY(0px);
+      transform: translateY(0px) translateZ(0);
     }
     50% {
-      transform: translateY(-15px);
+      transform: translateY(-15px) translateZ(0);
     }
   }
   
@@ -378,12 +392,17 @@
     box-shadow: var(--shadow-xl);
   }
   
-  /* Glassmorphism effect */
+  /* Glassmorphism effect - Removed for performance */
   .glass-cute {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.85);
     border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+  
+  /* Performance helpers */
+  .gpu-accelerate {
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 }
 

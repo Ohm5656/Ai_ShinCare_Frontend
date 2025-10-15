@@ -141,7 +141,7 @@ export function LoginRegisterScreen({ onLogin }: LoginRegisterScreenProps) {
         </div>
 
         {/* Tab Switcher */}
-        <div className="bg-white/60 backdrop-blur-lg rounded-full p-1.5 mb-6 flex shadow-cute-md border border-pink-100">
+        <div className="bg-white/90 rounded-full p-1.5 mb-6 flex shadow-cute-md border border-pink-100">
           <button
             onClick={() => setActiveTab('login')}
             className={`flex-1 py-3.5 px-6 rounded-full transition-all duration-300 relative overflow-hidden ${
@@ -187,7 +187,7 @@ export function LoginRegisterScreen({ onLogin }: LoginRegisterScreenProps) {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: activeTab === 'login' ? 20 : -20 }}
             transition={{ duration: 0.3 }}
-            className="bg-white/90 backdrop-blur-md rounded-[32px] p-8 shadow-cute-xl border border-pink-100"
+            className="bg-white/95 rounded-[32px] p-8 shadow-cute-xl border border-pink-100"
           >
             <form onSubmit={handleSubmit} className="space-y-5">
               {activeTab === 'login' ? (

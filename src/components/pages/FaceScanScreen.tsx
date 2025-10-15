@@ -13,14 +13,6 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  const skinFeatures = [
-    { label: 'ริ้วรอย', value: 85, color: 'bg-pink-400' },
-    { label: 'ความแดง', value: 72, color: 'bg-red-400' },
-    { label: 'โทนสีผิว', value: 88, color: 'bg-yellow-400' },
-    { label: 'ความมัน', value: 65, color: 'bg-blue-400' },
-    { label: 'ถุงใต้ตา', value: 78, color: 'bg-purple-400' },
-  ];
-
   const handleAnalyze = () => {
     setIsAnalyzing(true);
     setProgress(0);
@@ -50,7 +42,7 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
       {/* Close Button */}
       <button
         onClick={onBack}
-        className="absolute top-6 left-6 z-20 w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center"
+        className="absolute top-6 left-6 z-20 w-10 h-10 bg-black/30 rounded-full flex items-center justify-center"
       >
         <X className="w-6 h-6 text-white" />
       </button>
@@ -84,43 +76,14 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
           transition={{ delay: 0.3 }}
           className="absolute top-20 left-0 right-0 text-center z-10"
         >
-          <div className="bg-green-500/90 backdrop-blur-sm text-white px-6 py-3 rounded-full inline-flex items-center gap-2 shadow-lg">
+          <div className="bg-green-500 text-white px-6 py-3 rounded-full inline-flex items-center gap-2 shadow-lg">
             <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
             ตรวจพบใบหน้าแล้ว ✅
           </div>
-          <div className="mt-3 bg-white/20 backdrop-blur-sm text-white px-6 py-2 rounded-full inline-flex items-center gap-2">
+          <div className="mt-3 bg-black/40 text-white px-6 py-2 rounded-full inline-flex items-center gap-2">
             💡 แสงเหมาะสม
           </div>
         </motion.div>
-
-        {/* Skin Features Bars */}
-        {!isAnalyzing && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="absolute bottom-32 left-0 right-0 px-6 z-10"
-          >
-            <div className="bg-black/60 backdrop-blur-md rounded-3xl p-5 space-y-3">
-              {skinFeatures.map((feature, index) => (
-                <div key={feature.label}>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-white text-sm">{feature.label}</span>
-                    <span className="text-pink-300 text-sm">{feature.value}%</span>
-                  </div>
-                  <div className="h-2 bg-white/20 rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${feature.value}%` }}
-                      transition={{ delay: 0.6 + index * 0.1, duration: 0.5 }}
-                      className={`h-full ${feature.color} rounded-full`}
-                    ></motion.div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
 
         {/* Analyzing Progress */}
         {isAnalyzing && (
@@ -129,7 +92,7 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
             animate={{ opacity: 1 }}
             className="absolute bottom-32 left-0 right-0 px-6 z-10"
           >
-            <div className="bg-black/60 backdrop-blur-md rounded-3xl p-6 text-center">
+            <div className="bg-black/70 rounded-3xl p-6 text-center">
               <div className="text-white mb-4">กำลังวิเคราะห์ผิวของคุณ...</div>
               <Progress value={progress} className="h-3 mb-3" />
               <div className="text-pink-300">{progress}%</div>
@@ -139,12 +102,12 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
 
         {/* Help Buttons */}
         <div className="absolute bottom-6 left-6 z-10">
-          <button className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center">
+          <button className="w-12 h-12 bg-black/30 rounded-full flex items-center justify-center">
             <HelpCircle className="w-6 h-6 text-white" />
           </button>
         </div>
         <div className="absolute bottom-6 right-6 z-10">
-          <button className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center">
+          <button className="w-12 h-12 bg-black/30 rounded-full flex items-center justify-center">
             <Lightbulb className="w-6 h-6 text-white" />
           </button>
         </div>

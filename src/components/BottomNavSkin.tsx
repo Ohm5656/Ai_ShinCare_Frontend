@@ -57,7 +57,7 @@ export function BottomNavSkin({ activeTab, onTabChange }: BottomNavSkinProps) {
 
   return (
     <nav 
-      className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-pink-100 shadow-cute-xl z-50"
+      className="fixed bottom-0 left-0 right-0 bg-white/95 border-t border-pink-100 shadow-cute-xl z-50"
       role="navigation"
       aria-label="Bottom navigation"
     >

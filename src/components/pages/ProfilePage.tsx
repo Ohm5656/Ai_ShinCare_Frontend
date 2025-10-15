@@ -133,7 +133,7 @@ export function ProfilePage({
               </div>
             </div>
 
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4">
+            <div className="bg-white/80 rounded-2xl p-4">
               <p className="text-sm text-gray-700">
                 ✨ <span className="text-gray-600">ผิวของคุณดูดีมาก! รักษารูทีนการบำรุงความชุ่มชื้นต่อไปนะคะ</span>
               </p>

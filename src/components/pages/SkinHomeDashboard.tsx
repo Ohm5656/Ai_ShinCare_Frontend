@@ -14,62 +14,64 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
   const quickStats = [
     {
       icon: '✨',
-      label: 'ระดับริ้วรอย',
-      score: 92,
-      status: 'ดีมาก!',
+      label: 'ริ้วรอย',
+      score: 85,
+      status: 'ดี',
       color: 'bg-mint-100 text-mint-700',
       gradient: 'from-mint-400 to-mint-500',
     },
     {
-      icon: '🌸',
-      label: 'สถานะสิว',
-      score: 78,
+      icon: '🔴',
+      label: 'ความแดง',
+      score: 72,
       status: 'ปกติ',
+      color: 'bg-pink-100 text-pink-700',
+      gradient: 'from-pink-400 to-pink-500',
+    },
+    {
+      icon: '🌟',
+      label: 'โทนสีผิว',
+      score: 88,
+      status: 'ดีมาก!',
       color: 'bg-peach-100 text-peach-700',
       gradient: 'from-peach-400 to-peach-500',
     },
     {
-      icon: '💫',
-      label: 'ฝ้า / จุดด่างดำ',
-      score: 85,
-      status: 'ดี',
+      icon: '💧',
+      label: 'ความมัน',
+      score: 65,
+      status: 'พอใช้',
+      color: 'bg-blue-100 text-blue-700',
+      gradient: 'from-blue-400 to-blue-500',
+    },
+    {
+      icon: '👁️',
+      label: 'ถุงใต้ตา',
+      score: 78,
+      status: 'ปกติ',
       color: 'bg-lavender-100 text-lavender-700',
       gradient: 'from-lavender-400 to-lavender-500',
+    },
+    {
+      icon: '🌸',
+      label: 'สิว',
+      score: 82,
+      status: 'ดี',
+      color: 'bg-purple-100 text-purple-700',
+      gradient: 'from-purple-400 to-purple-500',
     },
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-lavender-50/30 to-blue-50 pb-28 relative overflow-hidden">
-      {/* Cute floating decorations */}
-      <motion.div
-        className="absolute top-20 right-10 text-pink-200 opacity-30"
-        animate={{ 
-          y: [0, -15, 0],
-          rotate: [0, 10, 0]
-        }}
-        transition={{ 
-          duration: 4, 
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-      >
+      {/* Cute floating decorations - Simplified for performance */}
+      <div className="absolute top-20 right-10 text-pink-200 opacity-30">
         <Heart className="w-16 h-16" fill="currentColor" />
-      </motion.div>
+      </div>
 
-      <motion.div
-        className="absolute top-40 left-8 text-lavender-200 opacity-20"
-        animate={{ 
-          scale: [1, 1.2, 1],
-          rotate: [0, 180, 360]
-        }}
-        transition={{ 
-          duration: 8, 
-          repeat: Infinity,
-          ease: "linear"
-        }}
-      >
+      <div className="absolute top-40 left-8 text-lavender-200 opacity-20">
         <Sparkles className="w-12 h-12" />
-      </motion.div>
+      </div>
 
       {/* Header */}
       <div className="px-6 pt-12 pb-6 relative z-10">
@@ -92,29 +94,19 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
         className="px-6 mb-6 relative z-10"
       >
         <div className="bg-white rounded-[32px] p-8 shadow-cute-xl border border-pink-100 relative overflow-hidden">
-          {/* Decorative elements */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-pink-100 to-transparent rounded-full blur-3xl opacity-50"></div>
-          <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-blue-100 to-transparent rounded-full blur-3xl opacity-50"></div>
+          {/* Decorative elements - Removed blur for performance */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-pink-100 to-transparent rounded-full opacity-50"></div>
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-blue-100 to-transparent rounded-full opacity-50"></div>
           
           <div className="relative">
-            {/* Cute floating icons */}
-            <motion.div
-              className="absolute -top-2 -right-2"
-              animate={{ 
-                y: [0, -8, 0],
-              }}
-              transition={{ 
-                duration: 2, 
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            >
+            {/* Cute floating icons - Simplified for performance */}
+            <div className="absolute -top-2 -right-2">
               <Star className="w-6 h-6 text-peach-400" fill="currentColor" />
-            </motion.div>
+            </div>
 
             <div className="relative w-56 h-56 mx-auto mb-6">
-              {/* Outer glow */}
-              <div className="absolute inset-0 bg-gradient-to-br from-pink-200 to-blue-200 rounded-full blur-xl opacity-30"></div>
+              {/* Outer glow - Removed blur for performance */}
+              <div className="absolute inset-0 bg-gradient-to-br from-pink-200 to-blue-200 rounded-full opacity-30"></div>
               
               {/* SVG Circle */}
               <svg className="w-full h-full transform -rotate-90 relative z-10">
@@ -124,13 +116,6 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
                     <stop offset="50%" stopColor="#BE93FF" />
                     <stop offset="100%" stopColor="#87A9FF" />
                   </linearGradient>
-                  <filter id="glow">
-                    <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-                    <feMerge>
-                      <feMergeNode in="coloredBlur"/>
-                      <feMergeNode in="SourceGraphic"/>
-                    </feMerge>
-                  </filter>
                 </defs>
                 
                 {/* Background circle */}
@@ -154,7 +139,6 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
                   fill="none"
                   strokeDasharray={`${(skinScore / 100) * 628} 628`}
                   strokeLinecap="round"
-                  filter="url(#glow)"
                   initial={{ strokeDasharray: "0 628" }}
                   animate={{ strokeDasharray: `${(skinScore / 100) * 628} 628` }}
                   transition={{ duration: 1.5, ease: "easeOut", delay: 0.5 }}
