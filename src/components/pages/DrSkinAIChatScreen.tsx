@@ -109,7 +109,7 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
       </div>
 
       {/* Chat Messages Area */}
-      <div className="flex-1 overflow-y-auto px-5 py-6 space-y-4 pb-44">
+      <div className="flex-1 overflow-y-auto px-5 py-6 space-y-4 pb-52">
         <AnimatePresence mode="popLayout">
           {messages.map((message, index) => (
             <motion.div
@@ -172,7 +172,7 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             transition={{ delay: 0.5 }}
-            className="absolute bottom-32 left-0 right-0 px-5 pb-3"
+            className="absolute bottom-44 left-0 right-0 px-5 pb-3 z-30"
           >
             <div className="bg-white/98 rounded-3xl p-4 shadow-lg border border-pink-100">
               <p className="text-xs text-gray-400 mb-3 px-1">💡 Suggested questions</p>
@@ -196,7 +196,7 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
       </AnimatePresence>
 
       {/* Bottom Message Input Bar - Modern & Minimal Design */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-b from-[#FFF5FA] to-[#FFEAF3] px-5 py-5 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
+      <div className="fixed bottom-20 left-0 right-0 bg-gradient-to-b from-[#FFF5FA] to-[#FFEAF3] px-5 py-5 shadow-[0_-4px_12px_rgba(0,0,0,0.08)] z-40">
         <div 
           className="flex items-center gap-3 bg-white rounded-[24px] px-4 py-3 shadow-[0_2px_16px_rgba(0,0,0,0.08)]"
           style={{

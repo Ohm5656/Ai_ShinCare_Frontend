@@ -605,6 +605,10 @@
     bottom: calc(var(--spacing) * 32);
   }
 
+  .bottom-44 {
+    bottom: calc(var(--spacing) * 44);
+  }
+
   .-left-2 {
     left: calc(var(--spacing) * -2);
   }
@@ -639,6 +643,14 @@
 
   .z-20 {
     z-index: 20;
+  }
+
+  .z-30 {
+    z-index: 30;
+  }
+
+  .z-40 {
+    z-index: 40;
   }
 
   .z-50 {
@@ -2177,8 +2189,8 @@
     padding-bottom: calc(var(--spacing) * 28);
   }
 
-  .pb-44 {
-    padding-bottom: calc(var(--spacing) * 44);
+  .pb-52 {
+    padding-bottom: calc(var(--spacing) * 52);
   }
 
   .pl-2 {
