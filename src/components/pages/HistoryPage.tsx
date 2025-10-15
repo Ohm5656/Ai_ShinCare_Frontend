@@ -14,7 +14,7 @@ interface HistoryPageProps {
   userName?: string;
 }
 
-export function HistoryPage({ userName = 'สุดา' }: HistoryPageProps) {
+export function HistoryPage({ userName = 'Suda' }: HistoryPageProps) {
   const [selectedMetric, setSelectedMetric] = useState('overall');
 
   // Mock data for skin score progress

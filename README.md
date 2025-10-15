@@ -1,7 +1,7 @@
 
   # Four-Window App Functionality
 
-  This is a code bundle for Four-Window App Functionality. The original project is available at https://www.figma.com/design/0UZelOwWlm1fVAlZoUBY4y/Four-Window-App-Functionality.
+  This is a code bundle for Four-Window App Functionality. The original project is available at https://www.figma.com/design/FuBQRGdpQ9Nk1bRdlpeAf5/Four-Window-App-Functionality.
 
   ## Running the code
 

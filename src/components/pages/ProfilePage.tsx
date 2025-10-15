@@ -17,7 +17,7 @@ interface ProfilePageProps {
 }
 
 export function ProfilePage({ 
-  userName = 'สุดา มาลัย', 
+  userName = 'Suda Malai', 
   userEmail = 'suda.malai@email.com',
   onEditProfile
 }: ProfilePageProps) {
