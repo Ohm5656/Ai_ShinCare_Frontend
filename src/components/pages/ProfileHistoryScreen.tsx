@@ -1,14 +1,38 @@
 import { motion } from 'motion/react';
-import { Edit, Calendar, TrendingUp, Award, ArrowLeft } from 'lucide-react';
+import { Edit, Calendar, TrendingUp, Award, ArrowLeft, Check, X } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarFallback } from '../ui/avatar';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useState } from 'react';
 
 interface ProfileHistoryScreenProps {
   onBack: () => void;
 }
 
 export function ProfileHistoryScreen({ onBack }: ProfileHistoryScreenProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [profileData, setProfileData] = useState({
+    name: 'Sarah Anderson',
+    email: 'sarah.anderson@email.com',
+    age: '28',
+    skinType: 'combination',
+    concerns: 'acne'
+  });
+  
+  const [editData, setEditData] = useState(profileData);
+  
+  const handleSave = () => {
+    setProfileData(editData);
+    setIsEditing(false);
+  };
+  
+  const handleCancel = () => {
+    setEditData(profileData);
+    setIsEditing(false);
+  };
   const historyData = [
     { date: 'Jan 10', score: 75 },
     { date: 'Jan 24', score: 78 },
@@ -61,23 +85,138 @@ export function ProfileHistoryScreen({ onBack }: ProfileHistoryScreenProps) {
         className="px-6 mb-6"
       >
         <div className="bg-white rounded-3xl p-6 shadow-lg">
-          <div className="flex items-center gap-4 mb-4">
-            <Avatar className="w-20 h-20 bg-gradient-to-br from-pink-300 to-blue-300">
-              <AvatarFallback className="text-3xl">👤</AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <h2 className="text-gray-800 mb-1">Sarah Anderson</h2>
-              <p className="text-gray-500">sarah.anderson@email.com</p>
+          {!isEditing ? (
+            <>
+              <div className="flex items-center gap-4 mb-4">
+                <Avatar className="w-20 h-20 bg-gradient-to-br from-pink-300 to-blue-300">
+                  <AvatarFallback className="text-3xl">👤</AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <h2 className="text-gray-800 mb-1">{profileData.name}</h2>
+                  <p className="text-gray-500">{profileData.email}</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full border-pink-200 text-pink-600 hover:bg-pink-50"
+                  onClick={() => setIsEditing(true)}
+                >
+                  <Edit className="w-4 h-4 mr-1" />
+                  แก้ไข
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-pink-100">
+                <div>
+                  <p className="text-gray-500 text-sm mb-1">อายุ</p>
+                  <p className="text-gray-800">{profileData.age} ปี</p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-sm mb-1">ประเภทผิว</p>
+                  <p className="text-gray-800">
+                    {profileData.skinType === 'dry' && 'ผิวแห้ง'}
+                    {profileData.skinType === 'oily' && 'ผิวมัน'}
+                    {profileData.skinType === 'combination' && 'ผิวผสม'}
+                    {profileData.skinType === 'normal' && 'ผิวปกติ'}
+                  </p>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-gray-800">แก้ไขข้อมูลส่วนตัว</h3>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full border-gray-200 text-gray-600 hover:bg-gray-50"
+                    onClick={handleCancel}
+                  >
+                    <X className="w-4 h-4 mr-1" />
+                    ยกเลิก
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="rounded-full bg-gradient-to-r from-pink-400 to-pink-500 text-white hover:from-pink-500 hover:to-pink-600"
+                    onClick={handleSave}
+                  >
+                    <Check className="w-4 h-4 mr-1" />
+                    บันทึก
+                  </Button>
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="name" className="text-gray-700 mb-1.5">ชื่อ-นามสกุล</Label>
+                <Input
+                  id="name"
+                  value={editData.name}
+                  onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                  className="rounded-xl border-pink-200 focus:border-pink-400"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="email" className="text-gray-700 mb-1.5">อีเมล</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={editData.email}
+                  onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                  className="rounded-xl border-pink-200 focus:border-pink-400"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="age" className="text-gray-700 mb-1.5">อายุ</Label>
+                <Input
+                  id="age"
+                  type="number"
+                  value={editData.age}
+                  onChange={(e) => setEditData({ ...editData, age: e.target.value })}
+                  className="rounded-xl border-pink-200 focus:border-pink-400"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="skinType" className="text-gray-700 mb-1.5">ประเภทผิว</Label>
+                <Select 
+                  value={editData.skinType} 
+                  onValueChange={(value) => setEditData({ ...editData, skinType: value })}
+                >
+                  <SelectTrigger className="rounded-xl border-pink-200 focus:border-pink-400">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="dry">ผิวแห้ง</SelectItem>
+                    <SelectItem value="oily">ผิวมัน</SelectItem>
+                    <SelectItem value="combination">ผิวผสม</SelectItem>
+                    <SelectItem value="normal">ผิวปกติ</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="concerns" className="text-gray-700 mb-1.5">ปัญหาผิวหลัก</Label>
+                <Select 
+                  value={editData.concerns} 
+                  onValueChange={(value) => setEditData({ ...editData, concerns: value })}
+                >
+                  <SelectTrigger className="rounded-xl border-pink-200 focus:border-pink-400">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="acne">สิว</SelectItem>
+                    <SelectItem value="wrinkles">ริ้วรอย</SelectItem>
+                    <SelectItem value="dark-spots">จุดด่างดำ</SelectItem>
+                    <SelectItem value="redness">ผิวแดง</SelectItem>
+                    <SelectItem value="dryness">ผิวแห้ง</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-full border-pink-200 text-pink-600 hover:bg-pink-50"
-            >
-              <Edit className="w-4 h-4 mr-1" />
-              Edit
-            </Button>
-          </div>
+          )}
         </div>
       </motion.div>
 

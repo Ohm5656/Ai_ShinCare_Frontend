@@ -5,6 +5,8 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { ImageWithFallback } from '../figma/ImageWithFallback';
+import logoImage from 'figma:asset/4a008fbc4b155c2e3746d5ca5aa19eaf7ab60bcc.png';
 
 interface LoginRegisterScreenProps {
   onLogin: () => void;
@@ -76,49 +78,23 @@ export function LoginRegisterScreen({ onLogin }: LoginRegisterScreenProps) {
         {/* Logo & Welcome */}
         <div className="text-center mb-8">
           <motion.div
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
             transition={{ 
               delay: 0.2, 
               type: 'spring', 
               stiffness: 200,
               damping: 15
             }}
-            className="w-28 h-28 mx-auto mb-6 rounded-full bg-gradient-to-br from-pink-200 via-lavender-200 to-blue-200 flex items-center justify-center shadow-cute-xl relative"
+            className="mb-4"
           >
-            <div className="absolute inset-0 rounded-full bg-white opacity-40"></div>
-            <Sparkles className="w-14 h-14 text-pink-500 relative z-10" strokeWidth={2.5} />
-            
-            {/* Sparkle decorations */}
-            <motion.div
-              className="absolute -top-2 -right-2"
-              animate={{ 
-                scale: [1, 1.3, 1],
-                rotate: [0, 90, 0]
-              }}
-              transition={{ 
-                duration: 2, 
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            >
-              <div className="w-4 h-4 bg-peach-400 rounded-full"></div>
-            </motion.div>
-            
-            <motion.div
-              className="absolute -bottom-2 -left-2"
-              animate={{ 
-                scale: [1, 1.2, 1],
-              }}
-              transition={{ 
-                duration: 2.5, 
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: 0.5
-              }}
-            >
-              <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
-            </motion.div>
+            <div className="w-48 h-48 mx-auto flex items-center justify-center">
+              <ImageWithFallback 
+                src={logoImage} 
+                alt="GlowbieBell Logo" 
+                className="w-full h-full object-contain drop-shadow-lg"
+              />
+            </div>
           </motion.div>
           
           <motion.h1 
@@ -127,7 +103,7 @@ export function LoginRegisterScreen({ onLogin }: LoginRegisterScreenProps) {
             transition={{ delay: 0.4 }}
             className="text-pink-600 mb-3"
           >
-            AI Skin Analyzer ✨
+            GlowbieBell ✨
           </motion.h1>
           
           <motion.p 
@@ -136,7 +112,7 @@ export function LoginRegisterScreen({ onLogin }: LoginRegisterScreenProps) {
             transition={{ delay: 0.5 }}
             className="text-gray-600"
           >
-            สแกนผิวหน้าด้วย AI เพื่อผิวสวยสุขภาพดี 🌸
+            สแกนผิวหน้าด้วย AI เพื่อผิวสวยสุขภาพดี 💖
           </motion.p>
         </div>
 
