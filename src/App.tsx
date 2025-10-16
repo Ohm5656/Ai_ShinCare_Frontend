@@ -9,66 +9,74 @@ import { HistoryPage } from './components/pages/HistoryPage';
 import { EditProfilePage } from './components/pages/EditProfilePage';
 import { BottomNavSkin } from './components/BottomNavSkin';
 
-// Screen types for routing
-type Screen = 
-  | 'login' 
-  | 'home' 
-  | 'scan' 
-  | 'result' 
-  | 'chat' 
-  | 'history' 
-  | 'profile' 
+// ✅ import ตัวแปร API_URL จาก config
+import { API_URL } from './config';
+
+// ===============================
+// 📱 Main App Component
+// ===============================
+// ตัวหลักของ frontend ที่ควบคุมหน้าจอและการเชื่อม backend
+// ===============================
+
+// กำหนดประเภทของหน้าจอ (Screen State)
+type Screen =
+  | 'login'
+  | 'home'
+  | 'scan'
+  | 'result'
+  | 'chat'
+  | 'history'
+  | 'profile'
   | 'editProfile';
 
-/**
- * Main App Component
- * Handles navigation and authentication state
- */
 export default function App() {
-  // Authentication state
+  console.log('🔗 Connected to API:', API_URL);
+
+  // -----------------------------
+  // 🔐 Authentication & Routing
+  // -----------------------------
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  
-  // Current screen state
   const [currentScreen, setCurrentScreen] = useState<Screen>('login');
 
-  /**
-   * Handle user login
-   * Transitions from login screen to home dashboard
-   */
-  const handleLogin = () => {
-    setIsLoggedIn(true);
-    setCurrentScreen('home');
+  // -----------------------------
+  // 🟢 ฟังก์ชันทดสอบการเชื่อม Backend
+  // -----------------------------
+  const handleLogin = async () => {
+    try {
+      console.log('🚀 Testing backend connection...');
+      const res = await fetch(`${API_URL}/`);
+      const data = await res.json();
+      console.log('✅ Backend Response:', data);
+      setIsLoggedIn(true);
+      setCurrentScreen('home');
+    } catch (err) {
+      console.error('❌ Backend not reachable:', err);
+      alert('Cannot connect to backend! โปรดตรวจสอบการตั้งค่า API_URL');
+    }
   };
 
-  /**
-   * Handle bottom navigation tab changes
-   * @param tab - Selected tab identifier
-   */
+  // เปลี่ยนแท็บ (จาก bottom nav)
   const handleTabChange = (tab: string) => {
     setCurrentScreen(tab as Screen);
   };
 
-  /**
-   * Handle profile save
-   * @param data - Updated profile data
-   */
+  // บันทึกโปรไฟล์
   const handleProfileSave = (data: any) => {
     console.log('Profile data saved:', data);
     setCurrentScreen('profile');
   };
 
-  /**
-   * Render current screen based on authentication and navigation state
-   */
+  // -----------------------------
+  // 🧭 ฟังก์ชันเลือกหน้าจอ
+  // -----------------------------
   const renderScreen = () => {
-    // Show login screen if not authenticated
+    // ถ้ายังไม่ล็อกอิน ให้แสดงหน้า Login ก่อน
     if (!isLoggedIn) {
       return <LoginRegisterScreen onLogin={handleLogin} />;
     }
 
-    // Render authenticated screens
+    // ถ้าล็อกอินแล้ว
     switch (currentScreen) {
-      // Home Dashboard Screen
       case 'home':
         return (
           <>
@@ -80,7 +88,6 @@ export default function App() {
           </>
         );
 
-      // Face Scan Camera Screen
       case 'scan':
         return (
           <FaceScanScreen
@@ -89,7 +96,6 @@ export default function App() {
           />
         );
 
-      // Skin Analysis Result Screen
       case 'result':
         return (
           <SkinAnalysisResult
@@ -98,7 +104,6 @@ export default function App() {
           />
         );
 
-      // AI Chat Assistant Screen
       case 'chat':
         return (
           <>
@@ -107,7 +112,6 @@ export default function App() {
           </>
         );
 
-      // Progress History Screen
       case 'history':
         return (
           <>
@@ -116,12 +120,11 @@ export default function App() {
           </>
         );
 
-      // User Profile Screen
       case 'profile':
         return (
           <>
-            <ProfilePage 
-              userName="Suda Malai" 
+            <ProfilePage
+              userName="Suda Malai"
               userEmail="suda.malai@email.com"
               onEditProfile={() => setCurrentScreen('editProfile')}
             />
@@ -129,7 +132,6 @@ export default function App() {
           </>
         );
 
-      // Edit Profile Screen
       case 'editProfile':
         return (
           <EditProfilePage
@@ -138,7 +140,6 @@ export default function App() {
           />
         );
 
-      // Default: Return to home
       default:
         return (
           <>
@@ -152,13 +153,16 @@ export default function App() {
     }
   };
 
+  // -----------------------------
+  // 🖥️ ส่วนแสดงผลหลักของแอป
+  // -----------------------------
   return (
-    <div 
+    <div
       className="min-h-screen bg-white"
       role="main"
       aria-label="AI Skin Analyzer Application"
     >
-      {/* Mobile Container - Max width 390px (iPhone 13) */}
+      {/* Mobile container (390px width) */}
       <div className="max-w-md mx-auto bg-white min-h-screen relative">
         {renderScreen()}
       </div>
