@@ -122,7 +122,6 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         }
 
         const elapsed = Date.now() - startStableTime.current;
-        const progressSec = Math.min((elapsed / STABLE_TIME) * 100, 100);
 
         setStatus(
           `✅ ${STEPS[step]} ถูกต้อง (${(elapsed / 1000).toFixed(1)}s / ${
@@ -134,13 +133,20 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         if (elapsed >= STABLE_TIME) {
           stepLocked.current = true; // 🔒 กันถ่ายซ้ำ
           startStableTime.current = null;
+
+          // ✅ หยุด loop ชั่วคราวก่อนถ่าย
+          clearInterval(timerRef.current);
+
           captureThumb();
           setStatus(`📸 บันทึกภาพมุม ${STEPS[step]} แล้ว!`);
 
           // หน่วงให้ผู้ใช้เห็นข้อความก่อนเปลี่ยน
           setTimeout(() => {
-            stepLocked.current = false;
             nextStep();
+            stepLocked.current = false;
+
+            // ✅ เริ่ม loop ใหม่สำหรับมุมถัดไป
+            timerRef.current = setInterval(loop, CAPTURE_INTERVAL);
           }, 1000);
         }
       } else {
