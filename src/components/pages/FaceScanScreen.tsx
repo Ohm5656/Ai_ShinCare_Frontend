@@ -16,6 +16,7 @@ type Step = 0 | 1 | 2;
 
 const STABLE_TIME = 3000; // ต้องนิ่ง 3 วิ
 const CAPTURE_INTERVAL = 500; // ตรวจทุก 0.5 วิ
+const NEXT_DELAY = 800; // หน่วงก่อนเริ่ม loop ใหม่
 const API_BASE =
   import.meta.env.VITE_API_BASE ||
   "https://aishincarebackend-production.up.railway.app";
@@ -41,14 +42,15 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
   const startStableTime = useRef<number | null>(null);
   const loopRunning = useRef(false);
   const stepLocked = useRef(false);
-
-  // ✅ Ref กัน React delay
   const currentStepRef = useRef<Step>(0);
+
   useEffect(() => {
     currentStepRef.current = step;
   }, [step]);
 
-  // ========== เปิดกล้อง ==========
+  // =========================================
+  // 🎥 เปิดกล้อง
+  // =========================================
   useEffect(() => {
     (async () => {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -67,11 +69,12 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
     };
   }, []);
 
-  // ========== ดึงภาพจากกล้อง ==========
+  // =========================================
+  // 📸 ดึงภาพจากกล้อง
+  // =========================================
   async function captureFrame(): Promise<Blob | null> {
     const v = videoRef.current!;
     if (!v || v.videoWidth === 0 || v.videoHeight === 0) return null;
-
     const c = document.createElement("canvas");
     c.width = v.videoWidth;
     c.height = v.videoHeight;
@@ -79,13 +82,14 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
     ctx.translate(c.width, 0);
     ctx.scale(-1, 1);
     ctx.drawImage(v, 0, 0, c.width, c.height);
-
     return await new Promise((resolve) =>
       c.toBlob((b) => resolve(b), "image/jpeg", 0.8)
     );
   }
 
-  // ========== LOOP ==========
+  // =========================================
+  // 🔁 LOOP ตรวจมุม
+  // =========================================
   async function loop() {
     if (loopRunning.current || stepLocked.current) return;
     loopRunning.current = true;
@@ -131,7 +135,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         return;
       }
 
-      // ✅ ถ้ามุมถูกต้อง
+      // ✅ ตรวจมุม
       if (pose === target) {
         if (!startStableTime.current) startStableTime.current = Date.now();
         const elapsed = Date.now() - startStableTime.current;
@@ -150,25 +154,19 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
           }
 
           stepLocked.current = true;
-          startStableTime.current = null;
-
-          if (timerRef.current) {
-            clearInterval(timerRef.current);
-            timerRef.current = null;
-          }
-
+          if (timerRef.current) clearInterval(timerRef.current);
           captureThumb();
+
           setStablePercent(0);
           setStatus(`📸 บันทึกภาพมุม ${STEPS[stepNow]} แล้ว!`);
 
-          // ✅ แก้ค้างที่ซ้าย: หน่วง 700ms + await nextStep()
+          // ✅ ปิด loop ก่อนเปลี่ยนมุม
           setTimeout(async () => {
             await handleNextStep();
           }, 1200);
         }
       } else {
         resetStable();
-        // ❌ ลบ "(ตอนนี้คือ: ...)" ออกแล้ว
         setStatus(`🟡 กรุณา${STEPS[stepNow]}ให้ตรงมุม`);
       }
     } catch (err) {
@@ -178,37 +176,45 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
     loopRunning.current = false;
   }
 
-  // helper reset
   function resetStable() {
     startStableTime.current = null;
     setStablePercent(0);
   }
 
-  // ========== ไปมุมถัดไป ==========
+  // =========================================
+  // ⏭️ เปลี่ยนมุมต่อไป
+  // =========================================
   async function handleNextStep() {
     if (step < 2) {
       const next = (step + 1) as Step;
-      setStep(next);
+      await new Promise<void>((resolve) => {
+        setStep(next);
+        currentStepRef.current = next;
+        resolve();
+      });
+
+      // ✅ รีเซ็ตทุกค่าให้เริ่มใหม่มุมถัดไป
+      setFaceOk(false);
+      setLightOk(true);
+      resetStable();
       setStatus(`✅ สำเร็จ ต่อไป: ${STEPS[next]}`);
 
-      // ✅ รอให้ React อัปเดต step เสร็จก่อนเริ่ม loop ใหม่
-      await new Promise((r) => setTimeout(r, 700));
+      // ✅ รอให้ React อัปเดต state เสร็จจริงก่อนเริ่ม loop ใหม่
+      await new Promise((r) => setTimeout(r, NEXT_DELAY));
 
       stepLocked.current = false;
       loopRunning.current = false;
-
-      if (!timerRef.current) {
-        timerRef.current = setInterval(loop, CAPTURE_INTERVAL);
-      }
+      if (!timerRef.current) timerRef.current = setInterval(loop, CAPTURE_INTERVAL);
     } else {
-      // ครบ 3 มุม
       if (timerRef.current) clearInterval(timerRef.current);
       setStatus("🎉 ครบทั้ง 3 มุมแล้ว! เริ่มวิเคราะห์ผิว...");
       startAnalyze();
     }
   }
 
-  // ========== บันทึกภาพ ==========
+  // =========================================
+  // 💾 บันทึกภาพ
+  // =========================================
   function captureThumb() {
     const v = videoRef.current!;
     const c = document.createElement("canvas");
@@ -221,7 +227,9 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
     setThumbs((t) => [...t, c.toDataURL("image/jpeg")]);
   }
 
-  // ========== วิเคราะห์ผิว ==========
+  // =========================================
+  // 🔬 วิเคราะห์ผิว
+  // =========================================
   async function startAnalyze() {
     setIsAnalyzing(true);
     const blobs = await Promise.all(thumbs.map((t) => fetch(t).then((r) => r.blob())));
@@ -242,14 +250,18 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
     }, 80);
   }
 
-  // ========== สีกรอบวงรี ==========
+  // =========================================
+  // 🎨 สีวงรี
+  // =========================================
   const borderColor = !faceOk
     ? "border-pink-300"
     : lightOk
     ? "border-pink-500 shadow-[0_0_25px_rgba(244,114,182,0.8)]"
     : "border-yellow-400";
 
-  // ========== UI ==========
+  // =========================================
+  // 🧱 UI
+  // =========================================
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
       {/* Back */}
@@ -269,7 +281,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         playsInline
       />
 
-      {/* Face Ellipse */}
+      {/* Ellipse */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div
           className={`w-72 h-96 rounded-full border-4 transition-all duration-150 ${borderColor}`}
@@ -287,7 +299,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         </div>
       </motion.div>
 
-      {/* Progress */}
+      {/* Stable Progress */}
       {!isAnalyzing && stablePercent > 0 && (
         <div className="absolute bottom-24 w-full flex justify-center z-20">
           <div className="w-2/3">
@@ -296,7 +308,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         </div>
       )}
 
-      {/* Analyze overlay */}
+      {/* Analyze Overlay */}
       {isAnalyzing && (
         <motion.div
           className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-30"
