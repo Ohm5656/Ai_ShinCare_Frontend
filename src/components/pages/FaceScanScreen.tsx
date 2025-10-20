@@ -83,25 +83,38 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
       const res = await fetch(`${API_BASE}/analyze/pose`, { method: "POST", body: formData });
       const data = await res.json();
 
-      // ป้องกัน response ที่ไม่ปกติ
-      const pose = String(data.pose).trim();
+      // 🔍 debug ดูผลลัพธ์จริงจาก backend
+      console.log("[DEBUG] Pose Response:", data);
+
+      // ✅ แก้ logic parsing pose ให้รองรับได้ทุกกรณี
+      let pose = "";
+      if (Array.isArray(data.pose)) {
+        pose = String(data.pose[0]).trim().toLowerCase();
+      } else if (typeof data.pose === "string") {
+        // แยกข้อความ ('front', 1.6...) → เอาเฉพาะ front
+        pose = data.pose.split(",")[0].replace(/[\(\)']/g, "").trim().toLowerCase();
+      }
+
       const target = step === 0 ? "front" : step === 1 ? "left" : "right";
 
       setFaceOk(!!data.face_ok);
       setLightOk(!!data.light_ok);
 
+      // ⚠️ ถ้าไม่เจอหน้า
       if (!data.face_ok) {
         setStatus("🔍 ไม่พบใบหน้า กรุณาเข้าใกล้หรือเพิ่มแสง");
         stableCounter.current = 0;
         return;
       }
+
+      // ⚠️ ถ้าแสงน้อยเกินไป
       if (!data.light_ok) {
         setStatus("💡 แสงน้อยเกินไป กรุณาเพิ่มแสง");
         stableCounter.current = 0;
         return;
       }
 
-      // ✅ โฟกัสเฉพาะมุมที่ต้องการในขั้นตอนนี้
+      // ✅ ตรวจมุมที่ต้องการ
       if (pose === target) {
         stableCounter.current++;
         setStatus(`✅ ${STEPS[step]} ถูกต้อง (${stableCounter.current}/${STABLE_FRAMES})`);
@@ -111,8 +124,8 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
           nextStep();
         }
       } else {
+        setStatus(`🟡 กรุณา${STEPS[step]}ให้ตรงมุม (ตอนนี้คือ: ${pose || "ไม่พบ"})`);
         stableCounter.current = 0;
-        setStatus(`🟡 กรุณา${STEPS[step]}ให้ตรงมุม`);
       }
     } catch (err) {
       console.error("Pose analyze failed:", err);
@@ -174,7 +187,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
   }
 
   // =========================================
-  // 🎨 กำหนดสีของกรอบตรวจจับใบหน้า
+  // 🎨 สีกรอบตรวจจับใบหน้า
   // =========================================
   const borderColor = !faceOk
     ? "border-pink-300"
@@ -195,7 +208,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         <X className="w-6 h-6 text-white" />
       </button>
 
-      {/* กล้อง (กลับกระจก) */}
+      {/* กล้อง */}
       <video
         ref={videoRef}
         className="absolute inset-0 w-full h-full object-cover transform -scale-x-100"
@@ -204,12 +217,12 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         playsInline
       />
 
-      {/* วงรีจับหน้า */}
+      {/* วงรีตรวจจับ */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className={`w-72 h-96 rounded-full border-4 transition-all duration-150 ${borderColor}`} />
       </div>
 
-      {/* ข้อความสถานะ */}
+      {/* สถานะ */}
       <motion.div
         className="absolute top-20 w-full text-center z-20 px-4"
         initial={{ opacity: 0 }}
@@ -220,7 +233,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         </div>
       </motion.div>
 
-      {/* Progress ขณะวิเคราะห์ */}
+      {/* Progress */}
       {isAnalyzing && (
         <motion.div
           className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-30"
@@ -233,7 +246,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         </motion.div>
       )}
 
-      {/* ภาพที่ถ่ายได้ */}
+      {/* ภาพที่ถ่ายแล้ว */}
       <div className="absolute bottom-8 w-full flex justify-center gap-4 z-10">
         {thumbs.map((img, i) => (
           <img
