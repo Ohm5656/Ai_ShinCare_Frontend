@@ -32,6 +32,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
   const [lightOk, setLightOk] = useState(true);
   const stableCounter = useRef(0);
   const timerRef = useRef<any>(null);
+  const stepLocked = useRef(false); // 🔒 กันการถ่ายซ้ำมุมเดิม
 
   // =========================================
   // 🎥 เปิดกล้องเมื่อโหลด component
@@ -70,9 +71,11 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
   }
 
   // =========================================
-  // 🔁 Loop ตรวจมุมใบหน้าแบบเรียลไทม์
+  // 🔁 Loop ตรวจมุมใบหน้าแบบเรียลไทม์ (นิ่งครบ 8 เฟรมต่อมุม)
   // =========================================
   async function loop() {
+    if (stepLocked.current) return; // ถ้ามุมนี้ถ่ายเสร็จแล้ว ข้ามเลย
+
     const blob = await captureFrame();
     if (!blob) return;
 
@@ -83,15 +86,13 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
       const res = await fetch(`${API_BASE}/analyze/pose`, { method: "POST", body: formData });
       const data = await res.json();
 
-      // 🔍 debug ดูผลลัพธ์จริงจาก backend
       console.log("[DEBUG] Pose Response:", data);
 
-      // ✅ แก้ logic parsing pose ให้รองรับได้ทุกกรณี
+      // ✅ แปลงค่า pose ให้แน่นอน
       let pose = "";
       if (Array.isArray(data.pose)) {
         pose = String(data.pose[0]).trim().toLowerCase();
       } else if (typeof data.pose === "string") {
-        // แยกข้อความ ('front', 1.6...) → เอาเฉพาะ front
         pose = data.pose.split(",")[0].replace(/[\(\)']/g, "").trim().toLowerCase();
       }
 
@@ -119,13 +120,20 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         stableCounter.current++;
         setStatus(`✅ ${STEPS[step]} ถูกต้อง (${stableCounter.current}/${STABLE_FRAMES})`);
 
+        // ครบ 8 เฟรม → ถ่ายภาพมุมนี้แล้วไปมุมถัดไป
         if (stableCounter.current >= STABLE_FRAMES) {
+          stepLocked.current = true; // 🔒 กันไม่ให้ถ่ายซ้ำ
           captureThumb();
-          nextStep();
+          setStatus(`📸 บันทึกภาพมุม ${STEPS[step]} แล้ว!`);
+          setTimeout(() => {
+            stableCounter.current = 0;
+            stepLocked.current = false; // ปลดล็อกตอนเริ่มมุมใหม่
+            nextStep();
+          }, 1000);
         }
       } else {
-        setStatus(`🟡 กรุณา${STEPS[step]}ให้ตรงมุม (ตอนนี้คือ: ${pose || "ไม่พบ"})`);
         stableCounter.current = 0;
+        setStatus(`🟡 กรุณา${STEPS[step]}ให้ตรงมุม`);
       }
     } catch (err) {
       console.error("Pose analyze failed:", err);
