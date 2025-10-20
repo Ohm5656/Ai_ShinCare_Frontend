@@ -2,73 +2,95 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { Progress } from "../ui/progress";
 import { X } from "lucide-react";
-import { initFaceLandmarker, estimate, computeHeadPoseFromLandmarks } from "../../lib/pose";
 
 interface FaceScanScreenProps {
-  onAnalyzeResult: (result: any) => void; // รับผลลัพธ์วิเคราะห์ผิวจาก backend
+  onAnalyzeResult: (result: any) => void;
   onBack: () => void;
 }
 
 const STEPS = ["หน้าตรง", "หันซ้าย", "หันขวา"] as const;
 type Step = 0 | 1 | 2;
-
-const STABLE_FRAMES = 8; // ต้องนิ่งกี่เฟรมก่อนถ่าย
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000"; // ✅ URL backend
+const STABLE_FRAMES = 8;
+const API_BASE = import.meta.env.VITE_API_BASE || "https://aishincarebackend-production.up.railway.app";
 
 export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [step, setStep] = useState<Step>(0);
   const [thumbs, setThumbs] = useState<string[]>([]);
-  const [status, setStatus] = useState("กำลังโหลดโมเดล...");
+  const [status, setStatus] = useState("📷 กำลังเปิดกล้อง...");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [progress, setProgress] = useState(0);
   const stableCounter = useRef(0);
   const rafId = useRef<number>(0);
 
+  // ---------------------------
+  // 📸 เปิดกล้องเมื่อ component โหลด
+  // ---------------------------
   useEffect(() => {
     (async () => {
-      await initFaceLandmarker();
-      await startCamera();
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
       setStatus(`📷 กรุณา${STEPS[0]}`);
       loop();
     })();
     return () => cancelAnimationFrame(rafId.current);
   }, []);
 
-  async function startCamera() {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "user" },
-      audio: false,
-    });
-    if (videoRef.current) {
-      videoRef.current.srcObject = stream;
-      await videoRef.current.play();
-    }
-  }
+  // ---------------------------
+  // 📤 ดึง frame แล้วส่งไป backend
+  // ---------------------------
+  async function captureAndSend(): Promise<string> {
+    const v = videoRef.current!;
+    const c = document.createElement("canvas");
+    c.width = v.videoWidth;
+    c.height = v.videoHeight;
+    const ctx = c.getContext("2d")!;
+    ctx.drawImage(v, 0, 0, c.width, c.height);
 
-  /** แปลง frame จากกล้องเป็น blob เพื่อส่งไป backend */
-  function captureFrame(): Promise<Blob> {
-    return new Promise((resolve) => {
-      const v = videoRef.current!;
-      const c = document.createElement("canvas");
-      c.width = v.videoWidth;
-      c.height = v.videoHeight;
-      const ctx = c.getContext("2d")!;
-      ctx.drawImage(v, 0, 0, c.width, c.height);
-      c.toBlob((blob) => blob && resolve(blob), "image/jpeg");
-    });
-  }
+    const blob = await new Promise<Blob | null>((resolve) =>
+      c.toBlob((b) => resolve(b), "image/jpeg", 0.8)
+    );
+    if (!blob) return "none";
 
-  /** ส่ง frame ไปให้ backend วิเคราะห์มุม */
-  async function checkPoseBackend(blob: Blob): Promise<string> {
     const formData = new FormData();
     formData.append("file", blob, "frame.jpg");
-    const res = await fetch(`${API_BASE}/scan/pose`, { method: "POST", body: formData });
+
+    const res = await fetch(`${API_BASE}/analyze/pose`, { method: "POST", body: formData });
     const data = await res.json();
-    return data.pose || "unknown";
+    return data.pose || "none";
   }
 
-  /** เก็บภาพมุมที่ถูกต้องไว้ */
+  // ---------------------------
+  // 🧠 Loop ตรวจมุมแบบเรียลไทม์
+  // ---------------------------
+  async function loop() {
+    const pose = await captureAndSend();
+    const target = step === 0 ? "front" : step === 1 ? "left" : "right";
+
+    if (pose === target) {
+      stableCounter.current++;
+      setStatus(`✅ ${STEPS[step]} ถูกต้อง (${stableCounter.current}/${STABLE_FRAMES})`);
+      if (stableCounter.current >= STABLE_FRAMES) {
+        captureThumb();
+        nextStep();
+      }
+    } else if (pose === "none") {
+      setStatus("🔍 ไม่พบใบหน้า กรุณาเข้าใกล้หรือเพิ่มแสง");
+      stableCounter.current = 0;
+    } else {
+      stableCounter.current = 0;
+      setStatus(`🟡 กรุณา${STEPS[step]}ให้ตรงมุม (${pose})`);
+    }
+
+    rafId.current = requestAnimationFrame(loop);
+  }
+
+  // ---------------------------
+  // 💾 บันทึกภาพเมื่อมุมนิ่ง
+  // ---------------------------
   function captureThumb() {
     const v = videoRef.current!;
     const c = document.createElement("canvas");
@@ -78,7 +100,9 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
     setThumbs((t) => [...t, c.toDataURL("image/jpeg")]);
   }
 
-  /** ไปมุมต่อไป */
+  // ---------------------------
+  // ⏭️ ไปมุมต่อไป
+  // ---------------------------
   function nextStep() {
     if (step < 2) {
       const next = (step + 1) as Step;
@@ -86,72 +110,42 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
       setStatus(`✅ สำเร็จ ต่อไป: ${STEPS[next]}`);
       stableCounter.current = 0;
     } else {
-      setStatus("🎉 ครบทั้ง 3 มุมแล้ว! เริ่มวิเคราะห์ผิวของคุณ...");
+      setStatus("🎉 ครบทั้ง 3 มุมแล้ว! เริ่มวิเคราะห์ผิว...");
       startAnalyze();
     }
   }
 
-  /** Loop ตรวจจับแบบเรียลไทม์ */
-  async function loop() {
-    const v = videoRef.current;
-    if (!v) return;
-
-    // ดึงภาพออกมาและส่งให้ backend ตรวจมุม
-    const blob = await captureFrame();
-    const detectedPose = await checkPoseBackend(blob);
-
-    const target = step === 0 ? "front" : step === 1 ? "left" : "right";
-
-    if (detectedPose === target) {
-      stableCounter.current++;
-      setStatus(`✅ ${STEPS[step]} ถูกต้อง (นิ่งอีก ${STABLE_FRAMES - stableCounter.current})`);
-      if (stableCounter.current >= STABLE_FRAMES) {
-        captureThumb();
-        nextStep();
-      }
-    } else if (detectedPose === "none") {
-      setStatus("🔍 ไม่พบใบหน้า กรุณาเข้าใกล้/เพิ่มแสง");
-      stableCounter.current = 0;
-    } else {
-      stableCounter.current = 0;
-      setStatus(`🟡 กรุณา${STEPS[step]}ให้ตรงมุม (${detectedPose})`);
-    }
-
-    rafId.current = requestAnimationFrame(loop);
-  }
-
-  /** เมื่อครบ 3 มุมแล้ว → ส่งภาพทั้งหมดให้ backend วิเคราะห์ผิว */
+  // ---------------------------
+  // 🧪 วิเคราะห์ผิว (ส่ง 3 ภาพ)
+  // ---------------------------
   async function startAnalyze() {
     setIsAnalyzing(true);
-    setProgress(0);
-
-    const blobs = await Promise.all(
-      thumbs.map((t) =>
-        fetch(t).then((r) => r.blob())
-      )
-    );
-
+    const blobs = await Promise.all(thumbs.map((t) => fetch(t).then((r) => r.blob())));
     const formData = new FormData();
     blobs.forEach((b) => formData.append("files", b, "angle.jpg"));
-
-    const res = await fetch(`${API_BASE}/scan/analyze`, {
-      method: "POST",
-      body: formData,
-    });
+    const res = await fetch(`${API_BASE}/analyze/skin`, { method: "POST", body: formData });
     const data = await res.json();
 
-    // โหลด progress animation สวย ๆ
+    let p = 0;
     const timer = setInterval(() => {
-      setProgress((p) => {
-        if (p >= 100) {
-          clearInterval(timer);
-          onAnalyzeResult(data);
-          return 100;
-        }
-        return p + 5;
-      });
+      p += 5;
+      setProgress(p);
+      if (p >= 100) {
+        clearInterval(timer);
+        onAnalyzeResult(data);
+      }
     }, 80);
   }
+
+  // ---------------------------
+  // 🎨 UI
+  // ---------------------------
+  const borderColor =
+    status.startsWith("✅") || status.startsWith("🎉")
+      ? "border-green-400 shadow-[0_0_25px_rgba(34,197,94,0.7)]"
+      : status.startsWith("🟡")
+      ? "border-yellow-400 shadow-[0_0_25px_rgba(250,204,21,0.6)]"
+      : "border-pink-400 shadow-[0_0_25px_rgba(244,114,182,0.6)]";
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
@@ -174,15 +168,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
 
       {/* วงรีจับหน้า */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div
-          className={`w-72 h-96 rounded-full border-4 transition-colors duration-150 ${
-            status.startsWith("✅") || status.startsWith("🎉")
-              ? "border-green-400 shadow-[0_0_30px_rgba(34,197,94,0.7)]"
-              : status.startsWith("🟡")
-              ? "border-yellow-400 shadow-[0_0_30px_rgba(250,204,21,0.6)]"
-              : "border-pink-400 shadow-[0_0_30px_rgba(244,114,182,0.6)]"
-          }`}
-        />
+        <div className={`w-72 h-96 rounded-full border-4 transition-all ${borderColor}`} />
       </div>
 
       {/* ข้อความสถานะ */}
@@ -196,7 +182,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         </div>
       </motion.div>
 
-      {/* กรณีกำลังวิเคราะห์ */}
+      {/* Loading ขณะวิเคราะห์ */}
       {isAnalyzing && (
         <motion.div
           className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-30"
@@ -211,9 +197,9 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         </motion.div>
       )}
 
-      {/* แสดงภาพที่ถ่ายได้ */}
+      {/* แสดงภาพ 3 มุม */}
       <div className="absolute bottom-8 w-full flex justify-center gap-4 z-10">
-        {thumbs.slice(0, 3).map((img, i) => (
+        {thumbs.map((img, i) => (
           <img
             key={i}
             src={img}
