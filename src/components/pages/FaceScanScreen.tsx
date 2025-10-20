@@ -23,17 +23,18 @@ const API_BASE =
 // =========================================
 export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [step, setStep] = useState<Step>(0); // 0=หน้าตรง, 1=หันซ้าย, 2=หันขวา
-  const [thumbs, setThumbs] = useState<string[]>([]); // เก็บภาพที่ถ่ายได้แต่ละมุม
+  const [step, setStep] = useState<Step>(0);
+  const [thumbs, setThumbs] = useState<string[]>([]);
   const [status, setStatus] = useState("📷 กำลังเปิดกล้อง...");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [faceOk, setFaceOk] = useState(false);
   const [lightOk, setLightOk] = useState(true);
 
-  const timerRef = useRef<any>(null); // สำหรับควบคุม setInterval loop
-  const stepLocked = useRef(false); // ✅ ตัวล็อกป้องกันการถ่ายซ้ำ
-  const startStableTime = useRef<number | null>(null); // เวลาที่เริ่มนิ่ง
+  const timerRef = useRef<any>(null);
+  const stepLocked = useRef(false);
+  const startStableTime = useRef<number | null>(null);
+  const loopRunning = useRef(false); // ✅ ป้องกัน loop ซ้อน
 
   // =========================================
   // 🎥 เปิดกล้องเมื่อโหลด component
@@ -64,7 +65,6 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
     c.width = v.videoWidth;
     c.height = v.videoHeight;
     const ctx = c.getContext("2d")!;
-    // ✅ กลับภาพให้เหมือนกระจก
     ctx.translate(c.width, 0);
     ctx.scale(-1, 1);
     ctx.drawImage(v, 0, 0, c.width, c.height);
@@ -72,14 +72,17 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
   }
 
   // =========================================
-  // 🔁 Loop ตรวจมุมแบบเรียลไทม์ (กันถ่ายซ้ำ)
+  // 🔁 LOOP ตรวจมุมแบบเรียลไทม์ (ป้องกันซ้อน)
   // =========================================
   async function loop() {
-    // ✅ ถ้ากำลังถ่ายหรือเปลี่ยนมุม — หยุดทันที
-    if (stepLocked.current) return;
+    if (loopRunning.current || stepLocked.current) return;
+    loopRunning.current = true;
 
     const blob = await captureFrame();
-    if (!blob) return;
+    if (!blob) {
+      loopRunning.current = false;
+      return;
+    }
 
     const formData = new FormData();
     formData.append("file", blob, "frame.jpg");
@@ -88,7 +91,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
       const res = await fetch(`${API_BASE}/analyze/pose`, { method: "POST", body: formData });
       const data = await res.json();
 
-      // ✅ แปลงค่า pose ให้แน่นอน
+      // ✅ ปรับรูปแบบผลลัพธ์ pose ให้แน่นอน
       let pose = "";
       if (Array.isArray(data.pose)) {
         pose = String(data.pose[0]).trim().toLowerCase();
@@ -98,69 +101,62 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
 
       const target = step === 0 ? "front" : step === 1 ? "left" : "right";
 
-      // ====================================
-      // ตรวจเงื่อนไขใบหน้าและแสง
-      // ====================================
       setFaceOk(!!data.face_ok);
       setLightOk(!!data.light_ok);
 
+      // ตรวจแสงและใบหน้า
       if (!data.face_ok) {
         setStatus("🔍 ไม่พบใบหน้า กรุณาเข้าใกล้หรือเพิ่มแสง");
         startStableTime.current = null;
+        loopRunning.current = false;
         return;
       }
       if (!data.light_ok) {
         setStatus("💡 แสงน้อยเกินไป กรุณาเพิ่มแสง");
         startStableTime.current = null;
+        loopRunning.current = false;
         return;
       }
 
-      // ====================================
       // ✅ ตรวจว่ามุมถูกต้องหรือไม่
-      // ====================================
       if (pose === target) {
-        // ถ้ายังไม่เริ่มจับเวลา ให้บันทึกเวลาเริ่มนิ่ง
-        if (!startStableTime.current) {
-          startStableTime.current = Date.now();
-        }
-
+        if (!startStableTime.current) startStableTime.current = Date.now();
         const elapsed = Date.now() - startStableTime.current;
+
         setStatus(
-          `✅ ${STEPS[step]} ถูกต้อง (${(elapsed / 1000).toFixed(1)}s / ${
-            STABLE_TIME / 1000
-          }s)`
+          `✅ ${STEPS[step]} ถูกต้อง (${(elapsed / 1000).toFixed(1)}s / ${STABLE_TIME / 1000}s)`
         );
 
-        // ✅ ครบเวลาที่กำหนด (3 วินาที)
+        // ครบเวลานิ่ง
         if (elapsed >= STABLE_TIME) {
-          // 🔒 ล็อกกันถ่ายซ้ำ
           stepLocked.current = true;
           startStableTime.current = null;
-
-          // ✅ หยุด loop ทันที
           clearInterval(timerRef.current);
 
-          // ✅ ถ่ายภาพ
+          // ✅ ถ่ายรูป
           captureThumb();
           setStatus(`📸 บันทึกภาพมุม ${STEPS[step]} แล้ว!`);
 
-          // ✅ หน่วง 1 วิให้ผู้ใช้เห็นข้อความ แล้วไปมุมถัดไป
+          // ✅ เล่นเสียงชัตเตอร์ (ถ้ามีไฟล์ click.mp3)
+          try {
+            new Audio("/click.mp3").play();
+          } catch {}
+
           setTimeout(() => {
             nextStep();
             stepLocked.current = false;
-
-            // ✅ เริ่มตรวจมุมใหม่
             timerRef.current = setInterval(loop, CAPTURE_INTERVAL);
           }, 1200);
         }
       } else {
-        // มุมไม่ตรง → รีเซ็ตเวลาใหม่
         startStableTime.current = null;
-        setStatus(`🟡 กรุณา${STEPS[step]}ให้ตรงมุม`);
+        setStatus(`🟡 กรุณา${STEPS[step]}ให้ตรงมุม (ตอนนี้คือ: ${pose || "ไม่พบ"})`);
       }
     } catch (err) {
       console.error("Pose analyze failed:", err);
     }
+
+    loopRunning.current = false;
   }
 
   // =========================================
@@ -187,9 +183,8 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
       setStep(next);
       setStatus(`✅ สำเร็จ ต่อไป: ${STEPS[next]}`);
     } else {
-      // ✅ ครบทั้ง 3 มุม
-      setStatus("🎉 ครบทั้ง 3 มุมแล้ว! เริ่มวิเคราะห์ผิว...");
       clearInterval(timerRef.current);
+      setStatus("🎉 ครบทั้ง 3 มุมแล้ว! เริ่มวิเคราะห์ผิว...");
       startAnalyze();
     }
   }
