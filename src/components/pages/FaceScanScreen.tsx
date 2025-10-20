@@ -13,8 +13,8 @@ interface FaceScanScreenProps {
 
 const STEPS = ["หน้าตรง", "หันซ้าย", "หันขวา"] as const;
 type Step = 0 | 1 | 2;
-const STABLE_FRAMES = 8; // ต้องนิ่งกี่เฟรมก่อนบันทึก
-const CAPTURE_INTERVAL = 500; // 0.5 วิ
+const STABLE_TIME = 3000; // ✅ ต้องนิ่งกี่มิลลิวินาที (3 วิ)
+const CAPTURE_INTERVAL = 500; // ตรวจทุก 0.5 วิ
 const API_BASE =
   import.meta.env.VITE_API_BASE || "https://aishincarebackend-production.up.railway.app";
 
@@ -30,9 +30,10 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
   const [progress, setProgress] = useState(0);
   const [faceOk, setFaceOk] = useState(false);
   const [lightOk, setLightOk] = useState(true);
-  const stableCounter = useRef(0);
+
   const timerRef = useRef<any>(null);
-  const stepLocked = useRef(false); // 🔒 กันการถ่ายซ้ำมุมเดิม
+  const stepLocked = useRef(false);
+  const startStableTime = useRef<number | null>(null); // ⏱ เวลาที่เริ่มนิ่ง
 
   // =========================================
   // 🎥 เปิดกล้องเมื่อโหลด component
@@ -63,7 +64,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
     c.width = v.videoWidth;
     c.height = v.videoHeight;
     const ctx = c.getContext("2d")!;
-    // ✅ กลับภาพเป็นกระจก (mirror)
+    // ✅ กลับภาพเป็นกระจก
     ctx.translate(c.width, 0);
     ctx.scale(-1, 1);
     ctx.drawImage(v, 0, 0, c.width, c.height);
@@ -71,10 +72,10 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
   }
 
   // =========================================
-  // 🔁 Loop ตรวจมุมใบหน้าแบบเรียลไทม์ (นิ่งครบ 8 เฟรมต่อมุม)
+  // 🔁 Loop ตรวจมุมแบบเรียลไทม์ (นับเวลาแทนเฟรม)
   // =========================================
   async function loop() {
-    if (stepLocked.current) return; // ถ้ามุมนี้ถ่ายเสร็จแล้ว ข้ามเลย
+    if (stepLocked.current) return;
 
     const blob = await captureFrame();
     if (!blob) return;
@@ -85,8 +86,6 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
     try {
       const res = await fetch(`${API_BASE}/analyze/pose`, { method: "POST", body: formData });
       const data = await res.json();
-
-      console.log("[DEBUG] Pose Response:", data);
 
       // ✅ แปลงค่า pose ให้แน่นอน
       let pose = "";
@@ -104,35 +103,49 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
       // ⚠️ ถ้าไม่เจอหน้า
       if (!data.face_ok) {
         setStatus("🔍 ไม่พบใบหน้า กรุณาเข้าใกล้หรือเพิ่มแสง");
-        stableCounter.current = 0;
+        startStableTime.current = null;
         return;
       }
 
       // ⚠️ ถ้าแสงน้อยเกินไป
       if (!data.light_ok) {
         setStatus("💡 แสงน้อยเกินไป กรุณาเพิ่มแสง");
-        stableCounter.current = 0;
+        startStableTime.current = null;
         return;
       }
 
       // ✅ ตรวจมุมที่ต้องการ
       if (pose === target) {
-        stableCounter.current++;
-        setStatus(`✅ ${STEPS[step]} ถูกต้อง (${stableCounter.current}/${STABLE_FRAMES})`);
+        // ถ้ายังไม่เริ่มจับเวลา ให้บันทึกเวลาเริ่มนิ่ง
+        if (!startStableTime.current) {
+          startStableTime.current = Date.now();
+        }
 
-        // ครบ 8 เฟรม → ถ่ายภาพมุมนี้แล้วไปมุมถัดไป
-        if (stableCounter.current >= STABLE_FRAMES) {
-          stepLocked.current = true; // 🔒 กันไม่ให้ถ่ายซ้ำ
+        const elapsed = Date.now() - startStableTime.current;
+        const progressSec = Math.min((elapsed / STABLE_TIME) * 100, 100);
+
+        setStatus(
+          `✅ ${STEPS[step]} ถูกต้อง (${(elapsed / 1000).toFixed(1)}s / ${
+            STABLE_TIME / 1000
+          }s)`
+        );
+
+        // ครบเวลาที่กำหนด → ถ่ายภาพ
+        if (elapsed >= STABLE_TIME) {
+          stepLocked.current = true; // 🔒 กันถ่ายซ้ำ
+          startStableTime.current = null;
           captureThumb();
           setStatus(`📸 บันทึกภาพมุม ${STEPS[step]} แล้ว!`);
+
+          // หน่วงให้ผู้ใช้เห็นข้อความก่อนเปลี่ยน
           setTimeout(() => {
-            stableCounter.current = 0;
-            stepLocked.current = false; // ปลดล็อกตอนเริ่มมุมใหม่
+            stepLocked.current = false;
             nextStep();
           }, 1000);
         }
       } else {
-        stableCounter.current = 0;
+        // ถ้ามุมไม่ตรง → รีเซ็ตเวลาใหม่
+        startStableTime.current = null;
         setStatus(`🟡 กรุณา${STEPS[step]}ให้ตรงมุม`);
       }
     } catch (err) {
@@ -141,7 +154,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
   }
 
   // =========================================
-  // 💾 บันทึกภาพเมื่อมุมนิ่งครบ
+  // 💾 บันทึกภาพ
   // =========================================
   function captureThumb() {
     const v = videoRef.current!;
@@ -163,7 +176,6 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
       const next = (step + 1) as Step;
       setStep(next);
       setStatus(`✅ สำเร็จ ต่อไป: ${STEPS[next]}`);
-      stableCounter.current = 0;
     } else {
       setStatus("🎉 ครบทั้ง 3 มุมแล้ว! เริ่มวิเคราะห์ผิว...");
       clearInterval(timerRef.current);
