@@ -13,7 +13,7 @@ interface FaceScanScreenProps {
 
 const STEPS = ["หน้าตรง", "หันซ้าย", "หันขวา"] as const;
 type Step = 0 | 1 | 2;
-const STABLE_TIME = 3000; // ✅ ต้องนิ่ง 3 วินาทีก่อนถ่าย
+const STABLE_TIME = 3000; // ต้องนิ่ง 3 วิ
 const CAPTURE_INTERVAL = 500; // ตรวจทุก 0.5 วิ
 const API_BASE =
   import.meta.env.VITE_API_BASE || "https://aishincarebackend-production.up.railway.app";
@@ -30,11 +30,12 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
   const [progress, setProgress] = useState(0);
   const [faceOk, setFaceOk] = useState(false);
   const [lightOk, setLightOk] = useState(true);
+  const [stablePercent, setStablePercent] = useState(0); // 🔹 แสดง progress ระหว่างนิ่ง
 
   const timerRef = useRef<any>(null);
   const stepLocked = useRef(false);
+  const loopRunning = useRef(false);
   const startStableTime = useRef<number | null>(null);
-  const loopRunning = useRef(false); // ✅ ป้องกัน loop ซ้อน
 
   // =========================================
   // 🎥 เปิดกล้องเมื่อโหลด component
@@ -72,7 +73,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
   }
 
   // =========================================
-  // 🔁 LOOP ตรวจมุมแบบเรียลไทม์ (ป้องกันซ้อน)
+  // 🔁 LOOP ตรวจมุมแบบเรียลไทม์ (กันซ้อน/กันซ้ำ)
   // =========================================
   async function loop() {
     if (loopRunning.current || stepLocked.current) return;
@@ -91,29 +92,27 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
       const res = await fetch(`${API_BASE}/analyze/pose`, { method: "POST", body: formData });
       const data = await res.json();
 
-      // ✅ ปรับรูปแบบผลลัพธ์ pose ให้แน่นอน
       let pose = "";
-      if (Array.isArray(data.pose)) {
-        pose = String(data.pose[0]).trim().toLowerCase();
-      } else if (typeof data.pose === "string") {
+      if (Array.isArray(data.pose)) pose = String(data.pose[0]).trim().toLowerCase();
+      else if (typeof data.pose === "string")
         pose = data.pose.split(",")[0].replace(/[\(\)']/g, "").trim().toLowerCase();
-      }
 
       const target = step === 0 ? "front" : step === 1 ? "left" : "right";
 
       setFaceOk(!!data.face_ok);
       setLightOk(!!data.light_ok);
 
-      // ตรวจแสงและใบหน้า
       if (!data.face_ok) {
         setStatus("🔍 ไม่พบใบหน้า กรุณาเข้าใกล้หรือเพิ่มแสง");
         startStableTime.current = null;
+        setStablePercent(0);
         loopRunning.current = false;
         return;
       }
       if (!data.light_ok) {
         setStatus("💡 แสงน้อยเกินไป กรุณาเพิ่มแสง");
         startStableTime.current = null;
+        setStablePercent(0);
         loopRunning.current = false;
         return;
       }
@@ -121,35 +120,49 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
       // ✅ ตรวจว่ามุมถูกต้องหรือไม่
       if (pose === target) {
         if (!startStableTime.current) startStableTime.current = Date.now();
+
         const elapsed = Date.now() - startStableTime.current;
+        const percent = Math.min((elapsed / STABLE_TIME) * 100, 100);
+        setStablePercent(percent);
 
         setStatus(
-          `✅ ${STEPS[step]} ถูกต้อง (${(elapsed / 1000).toFixed(1)}s / ${STABLE_TIME / 1000}s)`
+          `✅ ${STEPS[step]} ถูกต้อง (${(elapsed / 1000).toFixed(1)}s / ${
+            STABLE_TIME / 1000
+          }s)`
         );
 
         // ครบเวลานิ่ง
         if (elapsed >= STABLE_TIME) {
+          // ⛔ ป้องกันถ่ายซ้ำซ้อน (รอบเก่าที่ยังรัน)
+          if (stepLocked.current) {
+            loopRunning.current = false;
+            return;
+          }
+
           stepLocked.current = true;
           startStableTime.current = null;
           clearInterval(timerRef.current);
+          setStablePercent(100);
 
           // ✅ ถ่ายรูป
           captureThumb();
           setStatus(`📸 บันทึกภาพมุม ${STEPS[step]} แล้ว!`);
 
-          // ✅ เล่นเสียงชัตเตอร์ (ถ้ามีไฟล์ click.mp3)
           try {
             new Audio("/click.mp3").play();
           } catch {}
 
+          // ✅ เปลี่ยนมุมใหม่หลัง 1.2 วิ
           setTimeout(() => {
             nextStep();
             stepLocked.current = false;
+            setStablePercent(0);
             timerRef.current = setInterval(loop, CAPTURE_INTERVAL);
           }, 1200);
         }
       } else {
         startStableTime.current = null;
+        setStablePercent(0);
         setStatus(`🟡 กรุณา${STEPS[step]}ให้ตรงมุม (ตอนนี้คือ: ${pose || "ไม่พบ"})`);
       }
     } catch (err) {
@@ -248,7 +261,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         <div className={`w-72 h-96 rounded-full border-4 transition-all duration-150 ${borderColor}`} />
       </div>
 
-      {/* สถานะข้อความ */}
+      {/* ข้อความสถานะ */}
       <motion.div
         className="absolute top-20 w-full text-center z-20 px-4"
         initial={{ opacity: 0 }}
@@ -259,7 +272,16 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         </div>
       </motion.div>
 
-      {/* Progress */}
+      {/* 🔹 Progress ตอนนิ่ง */}
+      {!isAnalyzing && stablePercent > 0 && (
+        <div className="absolute bottom-24 w-full flex justify-center z-20">
+          <div className="w-2/3">
+            <Progress value={stablePercent} className="h-2" />
+          </div>
+        </div>
+      )}
+
+      {/* Progress ตอนวิเคราะห์ */}
       {isAnalyzing && (
         <motion.div
           className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-30"
