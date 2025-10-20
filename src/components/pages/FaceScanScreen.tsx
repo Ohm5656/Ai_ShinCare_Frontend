@@ -14,9 +14,9 @@ interface FaceScanScreenProps {
 const STEPS = ["หน้าตรง", "หันซ้าย", "หันขวา"] as const;
 type Step = 0 | 1 | 2;
 
-const STABLE_TIME = 3000; // ต้องนิ่ง 3 วิ
-const CAPTURE_INTERVAL = 500; // ตรวจทุก 0.5 วิ
-const NEXT_DELAY = 800; // หน่วงก่อนเริ่ม loop ใหม่
+const STABLE_TIME = 3000;      // ต้องนิ่ง 3 วิ
+const CAPTURE_INTERVAL = 500;  // ตรวจทุก 0.5 วิ
+const NEXT_DELAY = 800;        // เวลารอเปลี่ยนมุมใหม่
 const API_BASE =
   import.meta.env.VITE_API_BASE ||
   "https://aishincarebackend-production.up.railway.app";
@@ -37,7 +37,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
   const [faceOk, setFaceOk] = useState(false);
   const [lightOk, setLightOk] = useState(true);
 
-  // Control flags
+  // Flags กัน loop ซ้อน
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startStableTime = useRef<number | null>(null);
   const loopRunning = useRef(false);
@@ -135,7 +135,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         return;
       }
 
-      // ✅ ตรวจมุม
+      // ✅ ตรวจมุมถูก
       if (pose === target) {
         if (!startStableTime.current) startStableTime.current = Date.now();
         const elapsed = Date.now() - startStableTime.current;
@@ -160,7 +160,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
           setStablePercent(0);
           setStatus(`📸 บันทึกภาพมุม ${STEPS[stepNow]} แล้ว!`);
 
-          // ✅ ปิด loop ก่อนเปลี่ยนมุม
+          // ✅ ไปมุมถัดไปหลังถ่าย
           setTimeout(async () => {
             await handleNextStep();
           }, 1200);
@@ -193,13 +193,15 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         resolve();
       });
 
-      // ✅ รีเซ็ตทุกค่าให้เริ่มใหม่มุมถัดไป
+      // ✅ รีเซ็ตค่าก่อนเริ่มมุมใหม่
       setFaceOk(false);
       setLightOk(true);
       resetStable();
-      setStatus(`✅ สำเร็จ ต่อไป: ${STEPS[next]}`);
 
-      // ✅ รอให้ React อัปเดต state เสร็จจริงก่อนเริ่ม loop ใหม่
+      // 🟡 แจ้งให้ผู้ใช้หันตามมุมใหม่ทันที
+      setStatus(`🟡 กรุณา${STEPS[next]}ให้ตรงมุม`);
+
+      // ✅ รอให้ React อัปเดตเสร็จก่อนเริ่ม loop ใหม่
       await new Promise((r) => setTimeout(r, NEXT_DELAY));
 
       stepLocked.current = false;
