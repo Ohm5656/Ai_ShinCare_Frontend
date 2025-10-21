@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Check } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
-import faceGuideImage from 'figma:asset/41e0b8b5ae6166dc73affc46ce436beac2f84b0b.png';
 
 interface FaceScanScreenProps {
   onAnalyze: () => void;
