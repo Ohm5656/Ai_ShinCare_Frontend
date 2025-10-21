@@ -1,7 +1,10 @@
-import { motion } from 'motion/react';
-import { Camera, Sparkles, Heart, Star, Zap } from 'lucide-react';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Camera, Sparkles, Heart, BarChart3, CircleDot } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface SkinHomeDashboardProps {
   userName?: string;
@@ -9,67 +12,85 @@ interface SkinHomeDashboardProps {
 }
 
 export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDashboardProps) {
+  const [viewMode, setViewMode] = useState<'circular' | 'radar'>('circular');
+  const { t } = useLanguage();
   const skinScore = 87;
 
   const quickStats = [
     {
-      icon: '✨',
-      label: 'ริ้วรอย',
+      emoji: '〰️',
+      label: t.wrinkles,
       score: 85,
-      status: 'ดี',
+      status: t.good,
       color: 'bg-mint-100 text-mint-700',
       gradient: 'from-mint-400 to-mint-500',
+      iconColor: 'text-mint-600',
     },
     {
-      icon: '🔴',
-      label: 'ความแดง',
+      emoji: '🔴',
+      label: t.redness,
       score: 72,
-      status: 'ปกติ',
+      status: t.normal,
       color: 'bg-pink-100 text-pink-700',
       gradient: 'from-pink-400 to-pink-500',
+      iconColor: 'text-pink-600',
     },
     {
-      icon: '🌟',
-      label: 'โทนสีผิว',
+      emoji: '🎨',
+      label: t.skinTone,
       score: 88,
-      status: 'ดีมาก!',
+      status: t.veryGood,
       color: 'bg-peach-100 text-peach-700',
       gradient: 'from-peach-400 to-peach-500',
+      iconColor: 'text-peach-600',
     },
     {
-      icon: '💧',
-      label: 'ความมัน',
+      emoji: '💧',
+      label: t.oiliness,
       score: 65,
-      status: 'พอใช้',
+      status: t.fair,
       color: 'bg-blue-100 text-blue-700',
       gradient: 'from-blue-400 to-blue-500',
+      iconColor: 'text-blue-600',
     },
     {
-      icon: '👁️',
-      label: 'ถุงใต้ตา',
+      emoji: '👁️',
+      label: t.eyeBags,
       score: 78,
-      status: 'ปกติ',
+      status: t.normal,
       color: 'bg-lavender-100 text-lavender-700',
       gradient: 'from-lavender-400 to-lavender-500',
+      iconColor: 'text-lavender-600',
     },
     {
-      icon: '🌸',
-      label: 'สิว',
+      emoji: '⚫',
+      label: t.acne,
       score: 82,
-      status: 'ดี',
+      status: t.good,
       color: 'bg-purple-100 text-purple-700',
       gradient: 'from-purple-400 to-purple-500',
+      iconColor: 'text-purple-600',
     },
   ];
 
+  // Prepare data for radar chart
+  const radarData = [
+    { subject: t.wrinklesShort, value: 85 },
+    { subject: t.rednessShort, value: 72 },
+    { subject: t.skinToneShort, value: 88 },
+    { subject: t.oilinessShort, value: 65 },
+    { subject: t.eyeBagsShort, value: 78 },
+    { subject: t.acneShort, value: 82 },
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-lavender-50/30 to-blue-50 pb-28 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-lavender-50 to-blue-50 pb-28 relative overflow-hidden">
       {/* Cute floating decorations - Simplified for performance */}
       <div className="absolute top-20 right-10 text-pink-200 opacity-30">
         <Heart className="w-16 h-16" fill="currentColor" />
       </div>
 
-      <div className="absolute top-40 left-8 text-lavender-200 opacity-20">
+      <div className="absolute top-40 left-8 text-blue-200 opacity-20">
         <Sparkles className="w-12 h-12" />
       </div>
 
@@ -80,9 +101,9 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
         >
-          <p className="text-gray-500 text-sm mb-1">สวัสดี! 👋</p>
-          <h2 className="text-gray-800 mb-2">คุณ{userName}</h2>
-          <p className="text-gray-600 text-sm">ผิวของคุณวันนี้เป็นอย่างไรบ้าง? ✨</p>
+          <p className="text-gray-500 text-sm mb-1">{t.homeGreeting}</p>
+          <h2 className="text-gray-800 mb-2">{t.userName}{userName}</h2>
+          <p className="text-gray-600 text-sm">{t.homeSubtitle}</p>
         </motion.div>
       </div>
 
@@ -99,79 +120,150 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
           <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-blue-100 to-transparent rounded-full opacity-50"></div>
           
           <div className="relative">
-            {/* Cute floating icons - Simplified for performance */}
-            <div className="absolute -top-2 -right-2">
-              <Star className="w-6 h-6 text-peach-400" fill="currentColor" />
+            {/* Toggle Button */}
+            <div className="absolute -top-2 -right-2 z-20">
+              <motion.button
+                onClick={() => setViewMode(viewMode === 'circular' ? 'radar' : 'circular')}
+                className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 to-blue-400 flex items-center justify-center shadow-cute-md hover:shadow-cute-lg hover:scale-110 transition-all duration-300"
+                whileHover={{ rotate: 180 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                {viewMode === 'circular' ? (
+                  <BarChart3 className="w-5 h-5 text-white" />
+                ) : (
+                  <CircleDot className="w-5 h-5 text-white" />
+                )}
+              </motion.button>
             </div>
 
-            <div className="relative w-56 h-56 mx-auto mb-6">
-              {/* Outer glow - Removed blur for performance */}
-              <div className="absolute inset-0 bg-gradient-to-br from-pink-200 to-blue-200 rounded-full opacity-30"></div>
-              
-              {/* SVG Circle */}
-              <svg className="w-full h-full transform -rotate-90 relative z-10">
-                <defs>
-                  <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#FF8FAA" />
-                    <stop offset="50%" stopColor="#BE93FF" />
-                    <stop offset="100%" stopColor="#87A9FF" />
-                  </linearGradient>
-                </defs>
-                
-                {/* Background circle */}
-                <circle
-                  cx="112"
-                  cy="112"
-                  r="100"
-                  stroke="#FFE4EA"
-                  strokeWidth="16"
-                  fill="none"
-                  strokeLinecap="round"
-                />
-                
-                {/* Progress circle */}
-                <motion.circle
-                  cx="112"
-                  cy="112"
-                  r="100"
-                  stroke="url(#scoreGradient)"
-                  strokeWidth="16"
-                  fill="none"
-                  strokeDasharray={`${(skinScore / 100) * 628} 628`}
-                  strokeLinecap="round"
-                  initial={{ strokeDasharray: "0 628" }}
-                  animate={{ strokeDasharray: `${(skinScore / 100) * 628} 628` }}
-                  transition={{ duration: 1.5, ease: "easeOut", delay: 0.5 }}
-                />
-              </svg>
-              
-              {/* Center Content */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <AnimatePresence mode="wait">
+              {viewMode === 'circular' ? (
                 <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.8, type: "spring", stiffness: 200 }}
+                  key="circular"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.3 }}
                 >
-                  <div className="text-pink-500 text-sm mb-1 flex items-center gap-1">
-                    <Sparkles className="w-4 h-4" />
-                    คะแนนผิว
+                  <div className="relative w-56 h-56 mx-auto mb-6">
+                    {/* Outer glow - Removed blur for performance */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-pink-200 to-blue-200 rounded-full opacity-30"></div>
+                    
+                    {/* SVG Circle */}
+                    <svg className="w-full h-full transform -rotate-90 relative z-10">
+                      <defs>
+                        <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#FF99CB" />
+                          <stop offset="50%" stopColor="#B79DFF" />
+                          <stop offset="100%" stopColor="#7DB8FF" />
+                        </linearGradient>
+                      </defs>
+                      
+                      {/* Background circle */}
+                      <circle
+                        cx="112"
+                        cy="112"
+                        r="100"
+                        stroke="#FFE8F3"
+                        strokeWidth="16"
+                        fill="none"
+                        strokeLinecap="round"
+                      />
+                      
+                      {/* Progress circle */}
+                      <motion.circle
+                        cx="112"
+                        cy="112"
+                        r="100"
+                        stroke="url(#scoreGradient)"
+                        strokeWidth="16"
+                        fill="none"
+                        strokeDasharray={`${(skinScore / 100) * 628} 628`}
+                        strokeLinecap="round"
+                        initial={{ strokeDasharray: "0 628" }}
+                        animate={{ strokeDasharray: `${(skinScore / 100) * 628} 628` }}
+                        transition={{ duration: 1.5, ease: "easeOut", delay: 0.5 }}
+                      />
+                    </svg>
+                    
+                    {/* Center Content */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: 0.8, type: "spring", stiffness: 200 }}
+                      >
+                        <div className="bg-gradient-to-r from-pink-500 via-lavender-500 to-blue-500 bg-clip-text text-transparent text-sm mb-1 flex items-center gap-1">
+                          <Sparkles className="w-4 h-4 text-pink-500" />
+                          {t.skinScore}
+                        </div>
+                        <div className="text-5xl font-semibold bg-gradient-to-r from-pink-500 via-lavender-500 to-blue-500 bg-clip-text text-transparent mb-1">
+                          {skinScore}
+                        </div>
+                        <div className="text-gray-400 text-sm">/100</div>
+                      </motion.div>
+                    </div>
                   </div>
-                  <div className="text-5xl font-semibold bg-gradient-to-r from-pink-500 via-lavender-500 to-blue-500 bg-clip-text text-transparent mb-1">
-                    {skinScore}
-                  </div>
-                  <div className="text-gray-400 text-sm">/100</div>
+                  
+                  <motion.p 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1 }}
+                    className="text-gray-600 text-center"
+                  >
+                    {t.skinHealthy}
+                  </motion.p>
                 </motion.div>
-              </div>
-            </div>
-            
-            <motion.p 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1 }}
-              className="text-gray-600 text-center"
-            >
-              ผิวของคุณดูสุขภาพดีมาก! 🌟
-            </motion.p>
+              ) : (
+                <motion.div
+                  key="radar"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <h3 className="text-center text-gray-700 mb-4">
+                    {t.analysisOverviewTitle}
+                  </h3>
+                  <div className="w-full h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadarChart data={radarData}>
+                        <defs>
+                          <linearGradient id="radarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stopColor="#FF99CB" stopOpacity={0.8} />
+                            <stop offset="50%" stopColor="#B79DFF" stopOpacity={0.8} />
+                            <stop offset="100%" stopColor="#7DB8FF" stopOpacity={0.8} />
+                          </linearGradient>
+                        </defs>
+                        <PolarGrid 
+                          stroke="#E8D5F0" 
+                          strokeWidth={1}
+                        />
+                        <PolarAngleAxis 
+                          dataKey="subject" 
+                          tick={{ fill: '#6B7280', fontSize: 12 }}
+                          tickLine={false}
+                        />
+                        <PolarRadiusAxis 
+                          angle={90} 
+                          domain={[0, 100]} 
+                          tick={{ fill: '#9CA3AF', fontSize: 10 }}
+                          tickCount={6}
+                        />
+                        <Radar
+                          name={t.skinScore}
+                          dataKey="value"
+                          stroke="#FF99CB"
+                          fill="url(#radarGradient)"
+                          fillOpacity={0.6}
+                          strokeWidth={2}
+                        />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </motion.div>
@@ -188,8 +280,8 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
           >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
-                <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${stat.gradient} flex items-center justify-center shadow-cute-sm`}>
-                  <span className="text-2xl">{stat.icon}</span>
+                <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${stat.gradient} flex items-center justify-center shadow-cute-sm text-2xl`}>
+                  {stat.emoji}
                 </div>
                 <div>
                   <div className="text-gray-800 text-sm font-medium">{stat.label}</div>
@@ -227,12 +319,12 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
         >
           <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
           <Camera className="w-6 h-6 mr-2 relative z-10" />
-          <span className="relative z-10">📸 เริ่มสแกนใบหน้า</span>
+          <span className="relative z-10">{t.startScan}</span>
           <Sparkles className="w-5 h-5 ml-2 relative z-10" />
         </Button>
         
         <p className="text-center text-gray-400 text-xs mt-3">
-          แค่ 30 วินาที รู้ผลทันที! ✨
+          {t.quickScan}
         </p>
       </motion.div>
     </div>

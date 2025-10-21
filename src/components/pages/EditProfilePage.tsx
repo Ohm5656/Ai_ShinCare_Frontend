@@ -4,6 +4,7 @@ import {
   ArrowLeft, Camera, User, Mail, Calendar, 
   Sparkles, Target, Check
 } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -33,10 +34,11 @@ export interface ProfileData {
 }
 
 export function EditProfilePage({ onBack, onSave, initialData }: EditProfilePageProps) {
+  const { t } = useLanguage();
   const [formData, setFormData] = useState<ProfileData>(
     initialData || {
-      fullName: 'ซาร่าห์ แอนเดอร์สัน',
-      email: 'sarah.anderson@email.com',
+      fullName: 'Suda Malai',
+      email: 'suda.malai@email.com',
       age: '28',
       gender: 'female',
       skinType: 'combination',
@@ -50,6 +52,19 @@ export function EditProfilePage({ onBack, onSave, initialData }: EditProfilePage
     setFormData((prev) => ({ ...prev, [field]: value }));
     setHasChanges(true);
   };
+
+  // Get gender icon color based on selection
+  const getGenderIconColor = () => {
+    switch (formData.gender) {
+      case 'male': return { bg: 'bg-blue-100', text: 'text-blue-600', border: 'border-blue-300', focus: 'focus:border-blue-300' };
+      case 'female': return { bg: 'bg-pink-100', text: 'text-pink-600', border: 'border-pink-300', focus: 'focus:border-pink-300' };
+      case 'other': return { bg: 'bg-peach-100', text: 'text-peach-600', border: 'border-peach-300', focus: 'focus:border-peach-300' };
+      case 'prefer-not-to-say': return { bg: 'bg-red-100', text: 'text-red-600', border: 'border-red-300', focus: 'focus:border-red-300' };
+      default: return { bg: 'bg-pink-100', text: 'text-pink-600', border: 'border-pink-300', focus: 'focus:border-pink-300' };
+    }
+  };
+
+  const genderColor = getGenderIconColor();
 
   const handleSave = () => {
     if (onSave) {
@@ -73,7 +88,7 @@ export function EditProfilePage({ onBack, onSave, initialData }: EditProfilePage
           >
             <ArrowLeft className="w-5 h-5 text-gray-700" />
           </button>
-          <h3 className="text-gray-800">แก้ไขโปรไฟล์</h3>
+          <h3 className="text-gray-800">{t.editProfile}</h3>
           <div className="w-10" /> {/* Spacer for alignment */}
         </div>
       </div>
@@ -102,7 +117,7 @@ export function EditProfilePage({ onBack, onSave, initialData }: EditProfilePage
                 className="border-pink-200 text-pink-700 hover:bg-pink-50"
               >
                 <Camera className="w-4 h-4 mr-2" />
-                เปลี่ยนรูปภาพ
+                {t.changePhoto}
               </Button>
             </div>
           </Card>
@@ -115,14 +130,14 @@ export function EditProfilePage({ onBack, onSave, initialData }: EditProfilePage
           transition={{ delay: 0.1, duration: 0.5 }}
         >
           <Card className="bg-white rounded-3xl p-6 shadow-lg border-0">
-            <h4 className="text-gray-800 mb-4">ข้อมูลส่วนตัว</h4>
+            <h4 className="text-gray-800 mb-4">{t.personalInformation}</h4>
             
             <div className="space-y-4">
               {/* Full Name */}
               <div>
                 <Label htmlFor="fullName" className="text-gray-700 mb-2 flex items-center gap-2">
                   <User className="w-4 h-4 text-pink-600" />
-                  ชื่อ-นามสกุล
+                  {t.fullName}
                 </Label>
                 <Input
                   id="fullName"
@@ -130,7 +145,7 @@ export function EditProfilePage({ onBack, onSave, initialData }: EditProfilePage
                   value={formData.fullName}
                   onChange={(e) => handleChange('fullName', e.target.value)}
                   className="rounded-2xl border-gray-200 bg-gray-50 focus:bg-white focus:border-pink-300"
-                  placeholder="กรอกชื่อ-นามสกุลของคุณ"
+                  placeholder={t.enterFullName}
                 />
               </div>
 
@@ -138,7 +153,7 @@ export function EditProfilePage({ onBack, onSave, initialData }: EditProfilePage
               <div>
                 <Label htmlFor="email" className="text-gray-700 mb-2 flex items-center gap-2">
                   <Mail className="w-4 h-4 text-pink-600" />
-                  อีเมล
+                  {t.email}
                 </Label>
                 <Input
                   id="email"
@@ -146,7 +161,7 @@ export function EditProfilePage({ onBack, onSave, initialData }: EditProfilePage
                   value={formData.email}
                   onChange={(e) => handleChange('email', e.target.value)}
                   className="rounded-2xl border-gray-200 bg-gray-50 focus:bg-white focus:border-pink-300"
-                  placeholder="กรอกอีเมลของคุณ"
+                  placeholder={t.enterEmail}
                 />
               </div>
 
@@ -154,7 +169,7 @@ export function EditProfilePage({ onBack, onSave, initialData }: EditProfilePage
               <div>
                 <Label htmlFor="age" className="text-gray-700 mb-2 flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-pink-600" />
-                  อายุ
+                  {t.age}
                 </Label>
                 <Input
                   id="age"
@@ -162,7 +177,7 @@ export function EditProfilePage({ onBack, onSave, initialData }: EditProfilePage
                   value={formData.age}
                   onChange={(e) => handleChange('age', e.target.value)}
                   className="rounded-2xl border-gray-200 bg-gray-50 focus:bg-white focus:border-pink-300"
-                  placeholder="กรอกอายุของคุณ"
+                  placeholder={t.enterAge}
                   min="1"
                   max="120"
                 />
@@ -171,21 +186,51 @@ export function EditProfilePage({ onBack, onSave, initialData }: EditProfilePage
               {/* Gender */}
               <div>
                 <Label htmlFor="gender" className="text-gray-700 mb-2 flex items-center gap-2">
-                  <User className="w-4 h-4 text-pink-600" />
-                  เพศ
+                  <div className={`w-6 h-6 rounded-full ${genderColor.bg} flex items-center justify-center`}>
+                    <User className={`w-4 h-4 ${genderColor.text}`} />
+                  </div>
+                  {t.gender}
                 </Label>
                 <Select
                   value={formData.gender}
                   onValueChange={(value) => handleChange('gender', value)}
                 >
-                  <SelectTrigger className="rounded-2xl border-gray-200 bg-gray-50 focus:bg-white focus:border-pink-300">
-                    <SelectValue placeholder="เลือกเพศ" />
+                  <SelectTrigger className={`rounded-2xl border-gray-200 bg-gray-50 focus:bg-white ${genderColor.focus}`}>
+                    <SelectValue placeholder={t.selectGender} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="female">หญิง</SelectItem>
-                    <SelectItem value="male">ชาย</SelectItem>
-                    <SelectItem value="other">อื่นๆ</SelectItem>
-                    <SelectItem value="prefer-not-to-say">ไม่ระบุ</SelectItem>
+                    <SelectItem value="female">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-full bg-pink-100 flex items-center justify-center">
+                          <div className="w-2 h-2 rounded-full bg-pink-500"></div>
+                        </div>
+                        {t.femaleLabel}
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="male">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-full bg-blue-100 flex items-center justify-center">
+                          <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                        </div>
+                        {t.maleLabel}
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="other">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-full bg-peach-100 flex items-center justify-center">
+                          <div className="w-2 h-2 rounded-full bg-peach-500"></div>
+                        </div>
+                        {t.otherLabel}
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="prefer-not-to-say">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-full bg-red-100 flex items-center justify-center">
+                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                        </div>
+                        {t.preferNotToSay}
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -200,28 +245,28 @@ export function EditProfilePage({ onBack, onSave, initialData }: EditProfilePage
           transition={{ delay: 0.2, duration: 0.5 }}
         >
           <Card className="bg-white rounded-3xl p-6 shadow-lg border-0">
-            <h4 className="text-gray-800 mb-4">ข้อมูลผิวพรรณ</h4>
+            <h4 className="text-gray-800 mb-4">{t.skinInformation}</h4>
             
             <div className="space-y-4">
               {/* Skin Type */}
               <div>
                 <Label htmlFor="skinType" className="text-gray-700 mb-2 flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-pink-600" />
-                  ประเภทผิว
+                  {t.skinType}
                 </Label>
                 <Select
                   value={formData.skinType}
                   onValueChange={(value) => handleChange('skinType', value)}
                 >
                   <SelectTrigger className="rounded-2xl border-gray-200 bg-gray-50 focus:bg-white focus:border-pink-300">
-                    <SelectValue placeholder="เลือกประเภทผิว" />
+                    <SelectValue placeholder={t.selectSkinType} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="normal">ผิวปกติ</SelectItem>
-                    <SelectItem value="dry">ผิวแห้ง</SelectItem>
-                    <SelectItem value="oily">ผิวมัน</SelectItem>
-                    <SelectItem value="combination">ผิวผสม</SelectItem>
-                    <SelectItem value="sensitive">ผิวแพ้ง่าย</SelectItem>
+                    <SelectItem value="normal">{t.normalSkinLabel}</SelectItem>
+                    <SelectItem value="dry">{t.drySkinLabel}</SelectItem>
+                    <SelectItem value="oily">{t.oilySkinLabel}</SelectItem>
+                    <SelectItem value="combination">{t.combinationSkinLabel}</SelectItem>
+                    <SelectItem value="sensitive">{t.sensitiveSkinLabel}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -230,22 +275,22 @@ export function EditProfilePage({ onBack, onSave, initialData }: EditProfilePage
               <div>
                 <Label htmlFor="skincareGoal" className="text-gray-700 mb-2 flex items-center gap-2">
                   <Target className="w-4 h-4 text-pink-600" />
-                  เป้าหมายการดูแลผิว
+                  {t.skincareGoal}
                 </Label>
                 <Select
                   value={formData.skincareGoal}
                   onValueChange={(value) => handleChange('skincareGoal', value)}
                 >
                   <SelectTrigger className="rounded-2xl border-gray-200 bg-gray-50 focus:bg-white focus:border-pink-300">
-                    <SelectValue placeholder="เลือกเป้าหมายการดูแลผิว" />
+                    <SelectValue placeholder={t.selectSkincareGoal} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="anti-aging">ต้านริ้วรอยและชะลอวัย</SelectItem>
-                    <SelectItem value="hydration">เพิ่มความชุ่มชื้น</SelectItem>
-                    <SelectItem value="acne">ลดสิวและรอยด่างดำ</SelectItem>
-                    <SelectItem value="brightening">เพิ่มความกระจ่างใส</SelectItem>
-                    <SelectItem value="sensitive">ดูแลผิวแพ้ง่าย</SelectItem>
-                    <SelectItem value="oil-control">ควบคุมความมันและรูขุมขน</SelectItem>
+                    <SelectItem value="anti-aging">{t.antiAging}</SelectItem>
+                    <SelectItem value="hydration">{t.hydration}</SelectItem>
+                    <SelectItem value="acne">{t.acneTreatment}</SelectItem>
+                    <SelectItem value="brightening">{t.brightening}</SelectItem>
+                    <SelectItem value="sensitive">{t.sensitiveCare}</SelectItem>
+                    <SelectItem value="oil-control">{t.oilControl}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -265,7 +310,7 @@ export function EditProfilePage({ onBack, onSave, initialData }: EditProfilePage
             className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white rounded-2xl py-6 shadow-lg"
           >
             <Check className="w-5 h-5 mr-2" />
-            บันทึกการเปลี่ยนแปลง
+            {t.saveChanges}
           </Button>
           
           <Button
@@ -273,7 +318,7 @@ export function EditProfilePage({ onBack, onSave, initialData }: EditProfilePage
             variant="outline"
             className="w-full border-gray-200 text-gray-700 hover:bg-gray-50 rounded-2xl py-6"
           >
-            ยกเลิก
+            {t.cancel}
           </Button>
         </motion.div>
 
@@ -285,7 +330,7 @@ export function EditProfilePage({ onBack, onSave, initialData }: EditProfilePage
             className="bg-blue-50 rounded-2xl p-4 text-center"
           >
             <p className="text-sm text-blue-700">
-              💡 คุณมีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก
+              {t.unsavedChanges}
             </p>
           </motion.div>
         )}

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Send, Mic, Plus, Sparkles } from 'lucide-react';
 import { Avatar, AvatarFallback } from '../ui/avatar';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface Message {
   id: number;
@@ -15,10 +16,11 @@ interface DrSkinAIChatScreenProps {
 }
 
 export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
+  const { t } = useLanguage();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
-      text: "สวัสดีค่ะ! ฉันคือ Dr.SkinAI 🌸 จากการสแกนล่าสุดของคุณ ผิวของคุณดูมีความมันเล็กน้อยและมีผิวแดงเล็กน้อย คุณต้องการคำแนะนำการดูแลผิวเฉพาะบุคคลไหมคะ?",
+      text: t.aiGreeting,
       sender: 'ai',
       timestamp: new Date(),
     },
@@ -28,9 +30,9 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const quickReplies = [
-    'แนะนำผลิตภัณฑ์ดูแลผิว',
-    'สาเหตุของผิวแดง?',
-    'ลดสิวอย่างไร?',
+    t.recommendProducts,
+    t.causeOfRedness,
+    t.howToReduceAcne,
   ];
 
   const scrollToBottom = () => {
@@ -78,14 +80,14 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
   const getAIResponse = (userMessage: string): string => {
     const lowerMessage = userMessage.toLowerCase();
     
-    if (lowerMessage.includes('ผลิตภัณฑ์') || lowerMessage.includes('แนะนำ') || lowerMessage.includes('skincare') || lowerMessage.includes('recommend')) {
-      return "จากผิวผสมที่มีความมันเล็กน้อยของคุณ ฉันแนะนำ: 1) คลีนเซอร์อ่อนโยน (เช้า-เย็น) 2) เซรั่มไฮยารูโรนิกเพื่อความชุ่มชื้น 3) ครีมบำรุงเนื้อเบาที่มีไนอาซินาไมด์ 4) ครีมกันแดด SPF 50 ทุกวัน ต้องการคำแนะนำผลิตภัณฑ์เฉพาะเจาะจงไหมคะ? ✨";
-    } else if (lowerMessage.includes('ผิวแดง') || lowerMessage.includes('แดง') || lowerMessage.includes('redness') || lowerMessage.includes('red')) {
-      return "ผิวแดงอาจเกิดจาก: การอักเสบ ผิวแพ้ง่าย ปัจจัยแวดล้อม หรือโรคผิวหนังโรซาเซีย เพื่อลดความแดง ให้ใช้ผลิตภัณฑ์ที่มีส่วนผสมของเซนเทลลา แอเชียติกา สารสกัดชาเขียว หรือไนอาซินาไมด์ หลีกเลี่ยงการขัดผิวแรงและน้ำร้อน ต้องการคำแนะนำเพิ่มเติมไหมคะ? 🌿";
-    } else if (lowerMessage.includes('สิว') || lowerMessage.includes('acne')) {
-      return "เพื่อลดสิว: 1) ล้างหน้าวันละ 2 ครั้งด้วยซาลิซิลิกแอซิด 2) ใช้เบนโซอิลเพอร์ออกไซด์แต้มจุด 3) ทาเซรั่มไนอาซินาไมด์ 4) อย่าลืมบำรุงผิว 5) เปลี่ยนปลอกหมอนทุกสัปดาห์ หลีกเลี่ยงการแตะหน้า! ต้องการแนะนำผลิตภัณฑ์ไหมคะ? 💊";
+    if (lowerMessage.includes('ผลิตภัณฑ์') || lowerMessage.includes('แนะนำ') || lowerMessage.includes('skincare') || lowerMessage.includes('recommend') || lowerMessage.includes('产品') || lowerMessage.includes('推荐')) {
+      return t.aiProductRecommendation;
+    } else if (lowerMessage.includes('ผิวแดง') || lowerMessage.includes('แดง') || lowerMessage.includes('redness') || lowerMessage.includes('red') || lowerMessage.includes('红肿') || lowerMessage.includes('发红')) {
+      return t.aiRednessExplanation;
+    } else if (lowerMessage.includes('สิว') || lowerMessage.includes('acne') || lowerMessage.includes('痘痘')) {
+      return t.aiAcneAdvice;
     } else {
-      return "คำถามดีมากค่ะ! สำหรับคำแนะนำเฉพาะบุคคลตามผลวิเคราะห์ผิวของคุณ (คะแนน: 87/100) ฉันพร้อมช่วยเหลือค่ะ คุณสามารถถามเกี่ยวกับขั้นตอนการดูแลผิว คำแนะนำผลิตภัณฑ์ หรือปัญหาผิวเฉพาะเจาะจง เช่น ริ้วรอย ฝ้ากระ หรือความชุ่มชื้น คุณอยากรู้อะไรคะ? 😊";
+      return t.aiGeneralResponse;
     }
   };
 
@@ -94,16 +96,16 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
       {/* Top App Bar */}
       <div className="bg-white border-b border-pink-100 px-5 py-4 shadow-sm">
         <div className="flex items-center gap-3">
-          <Avatar className="w-12 h-12 bg-gradient-to-br from-pink-200 to-purple-200 border-2 border-white shadow-md">
+          <Avatar className="w-12 h-12 bg-gradient-to-br from-pink-200 to-lavender-200 border-2 border-white shadow-md">
             <AvatarFallback className="text-2xl bg-transparent">👩🏻‍⚕️</AvatarFallback>
           </Avatar>
           
           <div className="flex-1">
             <div className="flex items-center gap-1.5">
-              <h3 className="text-gray-800">Dr.SkinAI</h3>
+              <h3 className="text-gray-800">{t.drSkinAI}</h3>
               <Sparkles className="w-3.5 h-3.5 text-pink-400" />
             </div>
-            <p className="text-xs text-gray-500">Your personal skincare expert</p>
+            <p className="text-xs text-gray-500">{t.personalSkincareExpert}</p>
           </div>
         </div>
       </div>
@@ -121,7 +123,7 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
             >
               <div className={`flex items-end gap-2 max-w-[85%] ${message.sender === 'user' ? 'flex-row-reverse' : ''}`}>
                 {message.sender === 'ai' && (
-                  <Avatar className="w-7 h-7 bg-gradient-to-br from-blue-100 to-purple-100 flex-shrink-0 shadow-sm">
+                  <Avatar className="w-7 h-7 bg-gradient-to-br from-pink-100 to-lavender-100 flex-shrink-0 shadow-sm">
                     <AvatarFallback className="text-base bg-transparent">👩🏻‍⚕️</AvatarFallback>
                   </Avatar>
                 )}
@@ -129,8 +131,8 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
                 <div
                   className={`px-4 py-3 rounded-[20px] shadow-sm ${
                     message.sender === 'user'
-                      ? 'bg-gradient-to-br from-pink-100 to-pink-50 text-gray-800 rounded-br-md'
-                      : 'bg-gradient-to-br from-blue-50 to-blue-50/50 text-gray-800 rounded-bl-md'
+                      ? 'bg-gradient-to-br from-pink-100 to-lavender-50 text-gray-800 rounded-br-md'
+                      : 'bg-gradient-to-br from-lavender-50 to-pink-50/50 text-gray-800 rounded-bl-md'
                   }`}
                 >
                   <p className="whitespace-pre-wrap leading-relaxed text-[15px]">{message.text}</p>
@@ -148,14 +150,14 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
             exit={{ opacity: 0, y: -10 }}
             className="flex items-end gap-2"
           >
-            <Avatar className="w-7 h-7 bg-gradient-to-br from-blue-100 to-purple-100 shadow-sm">
+            <Avatar className="w-7 h-7 bg-gradient-to-br from-pink-100 to-lavender-100 shadow-sm">
               <AvatarFallback className="text-base bg-transparent">👩🏻‍⚕️</AvatarFallback>
             </Avatar>
-            <div className="bg-gradient-to-br from-blue-50 to-blue-50/50 px-5 py-3 rounded-[20px] rounded-bl-md shadow-sm">
+            <div className="bg-gradient-to-br from-lavender-50 to-pink-50/50 px-5 py-3 rounded-[20px] rounded-bl-md shadow-sm">
               <div className="flex gap-1.5">
                 <span className="w-2 h-2 bg-pink-300 rounded-full animate-bounce"></span>
-                <span className="w-2 h-2 bg-pink-300 rounded-full animate-bounce [animation-delay:0.2s]"></span>
-                <span className="w-2 h-2 bg-pink-300 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                <span className="w-2 h-2 bg-lavender-300 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                <span className="w-2 h-2 bg-blue-300 rounded-full animate-bounce [animation-delay:0.4s]"></span>
               </div>
             </div>
           </motion.div>
@@ -175,7 +177,7 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
             className="absolute bottom-44 left-0 right-0 px-5 pb-3 z-30"
           >
             <div className="bg-white/98 rounded-3xl p-4 shadow-lg border border-pink-100">
-              <p className="text-xs text-gray-400 mb-3 px-1">💡 Suggested questions</p>
+              <p className="text-xs text-gray-400 mb-3 px-1">{t.suggestedQuestions}</p>
               <div className="flex flex-wrap gap-2">
                 {quickReplies.map((reply, index) => (
                   <motion.button
@@ -184,7 +186,7 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.6 + index * 0.1 }}
                     onClick={() => handleQuickReply(reply)}
-                    className="bg-gradient-to-r from-pink-50 to-pink-50/50 border border-pink-200 text-pink-600 px-4 py-2 rounded-full hover:shadow-md hover:scale-105 transition-all duration-200 text-sm"
+                    className="bg-gradient-to-r from-pink-50 to-lavender-50 border border-pink-200 text-pink-600 px-4 py-2 rounded-full hover:shadow-md hover:scale-105 transition-all duration-200 text-sm"
                   >
                     {reply}
                   </motion.button>
@@ -215,7 +217,7 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              placeholder="Type your message…"
+              placeholder={t.typeYourMessage}
               className="w-full bg-transparent border-none outline-none text-gray-800 placeholder:text-[#B0B0B0] text-[15px]"
               style={{ fontFamily: "'Prompt', 'Inter', sans-serif" }}
             />

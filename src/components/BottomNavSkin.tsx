@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
 import { Home, Camera, BarChart3, MessageCircle, User, Sparkles } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface BottomNavSkinProps {
   activeTab: string;
@@ -11,12 +12,14 @@ interface BottomNavSkinProps {
  * Displays 5 navigation tabs with playful animations
  */
 export function BottomNavSkin({ activeTab, onTabChange }: BottomNavSkinProps) {
+  const { t } = useLanguage();
+  
   // Navigation tab configuration
   const navigationTabs = [
     { 
       id: 'home', 
       icon: Home, 
-      label: 'Home',
+      label: t.navHome,
       emoji: '🏠',
       color: 'from-pink-400 to-pink-500',
       ariaLabel: 'Navigate to home dashboard'
@@ -24,7 +27,7 @@ export function BottomNavSkin({ activeTab, onTabChange }: BottomNavSkinProps) {
     { 
       id: 'scan', 
       icon: Camera, 
-      label: 'Scan',
+      label: t.navScan,
       emoji: '📸',
       color: 'from-lavender-400 to-lavender-500',
       ariaLabel: 'Navigate to face scan'
@@ -32,7 +35,7 @@ export function BottomNavSkin({ activeTab, onTabChange }: BottomNavSkinProps) {
     { 
       id: 'history', 
       icon: BarChart3, 
-      label: 'History',
+      label: t.navHistory,
       emoji: '📊',
       color: 'from-blue-400 to-blue-500',
       ariaLabel: 'Navigate to progress history'
@@ -40,7 +43,7 @@ export function BottomNavSkin({ activeTab, onTabChange }: BottomNavSkinProps) {
     { 
       id: 'chat', 
       icon: MessageCircle, 
-      label: 'Chat',
+      label: t.navChat,
       emoji: '💬',
       color: 'from-peach-400 to-peach-500',
       ariaLabel: 'Navigate to AI chat assistant'
@@ -48,7 +51,7 @@ export function BottomNavSkin({ activeTab, onTabChange }: BottomNavSkinProps) {
     { 
       id: 'profile', 
       icon: User, 
-      label: 'Profile',
+      label: t.navProfile,
       emoji: '👤',
       color: 'from-mint-400 to-mint-500',
       ariaLabel: 'Navigate to user profile'

@@ -2,33 +2,36 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
 import { 
   TrendingUp, Calendar, Award, ChevronRight, 
-  Image as ImageIcon, Droplet, Circle, Scan, Sparkles, Star, Zap
+  Image as ImageIcon, Sparkles
 } from 'lucide-react';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface HistoryPageProps {
   userName?: string;
+  onViewScanDetail?: (scanId: number) => void;
 }
 
 type Timeframe = '7days' | '15days' | '30days';
 
-export function HistoryPage({ userName = 'Suda' }: HistoryPageProps) {
+export function HistoryPage({ userName = 'Suda', onViewScanDetail }: HistoryPageProps) {
+  const { t } = useLanguage();
   const [selectedMetric, setSelectedMetric] = useState('overall');
   const [selectedTimeframe, setSelectedTimeframe] = useState<Timeframe>('7days');
 
   // Mock data for different timeframes - 6 metrics ตรงกับหน้า Analysis
   const progressData = {
     '7days': [
-      { date: 'จ.', overall: 82, wrinkles: 83, redness: 70, tone: 86, oil: 80, eyeBags: 76, acne: 80 },
-      { date: 'อ.', overall: 83, wrinkles: 84, redness: 71, tone: 87, oil: 78, eyeBags: 77, acne: 81 },
-      { date: 'พ.', overall: 84, wrinkles: 84, redness: 71, tone: 87, oil: 76, eyeBags: 77, acne: 81 },
-      { date: 'พฤ.', overall: 85, wrinkles: 85, redness: 72, tone: 88, oil: 74, eyeBags: 78, acne: 82 },
-      { date: 'ศ.', overall: 86, wrinkles: 85, redness: 72, tone: 88, oil: 70, eyeBags: 78, acne: 82 },
-      { date: 'ส.', overall: 86, wrinkles: 85, redness: 72, tone: 88, oil: 68, eyeBags: 78, acne: 82 },
-      { date: 'อา.', overall: 87, wrinkles: 85, redness: 72, tone: 88, oil: 65, eyeBags: 78, acne: 82 },
+      { date: t.dayMon, overall: 82, wrinkles: 83, redness: 70, tone: 86, oil: 80, eyeBags: 76, acne: 80 },
+      { date: t.dayTue, overall: 83, wrinkles: 84, redness: 71, tone: 87, oil: 78, eyeBags: 77, acne: 81 },
+      { date: t.dayWed, overall: 84, wrinkles: 84, redness: 71, tone: 87, oil: 76, eyeBags: 77, acne: 81 },
+      { date: t.dayThu, overall: 85, wrinkles: 85, redness: 72, tone: 88, oil: 74, eyeBags: 78, acne: 82 },
+      { date: t.dayFri, overall: 86, wrinkles: 85, redness: 72, tone: 88, oil: 70, eyeBags: 78, acne: 82 },
+      { date: t.daySat, overall: 86, wrinkles: 85, redness: 72, tone: 88, oil: 68, eyeBags: 78, acne: 82 },
+      { date: t.daySun, overall: 87, wrinkles: 85, redness: 72, tone: 88, oil: 65, eyeBags: 78, acne: 82 },
     ],
     '15days': [
       { date: '1', overall: 75, wrinkles: 78, redness: 68, tone: 82, oil: 88, eyeBags: 72, acne: 76 },
@@ -54,79 +57,94 @@ export function HistoryPage({ userName = 'Suda' }: HistoryPageProps) {
   const timeframes = [
     { 
       id: '7days' as Timeframe, 
-      label: '7 วัน', 
+      label: t.days7, 
       emoji: '📅',
-      description: 'สัปดาห์นี้',
+      description: t.thisWeek,
       improvement: '+5',
       color: 'from-pink-400 to-pink-500'
     },
     { 
       id: '15days' as Timeframe, 
-      label: '15 วัน', 
+      label: t.days15, 
       emoji: '📊',
-      description: '2 สัปดาห์',
+      description: t.twoWeeks,
       improvement: '+12',
       color: 'from-lavender-400 to-lavender-500'
     },
     { 
       id: '30days' as Timeframe, 
-      label: '30 วัน', 
+      label: t.days30, 
       emoji: '📈',
-      description: 'เดือนนี้',
+      description: t.thisMonth,
       improvement: '+17',
       color: 'from-blue-400 to-blue-500'
     },
   ];
 
   const metrics = [
-    { id: 'overall', label: 'ภาพรวม', icon: TrendingUp, color: '#FF6B8F', gradient: 'from-pink-400 to-pink-500' },
-    { id: 'wrinkles', label: 'ริ้วรอย', icon: Sparkles, color: '#73FFA3', gradient: 'from-mint-400 to-mint-500' },
-    { id: 'redness', label: 'ความแดง', icon: Circle, color: '#FF8FAA', gradient: 'from-pink-400 to-pink-500' },
-    { id: 'tone', label: 'โทนสีผิว', icon: Star, color: '#FFB350', gradient: 'from-peach-400 to-peach-500' },
-    { id: 'oil', label: 'ความมัน', icon: Droplet, color: '#87A9FF', gradient: 'from-blue-400 to-blue-500' },
-    { id: 'eyeBags', label: 'ถุงใต้ตา', icon: Scan, color: '#CBA9FF', gradient: 'from-lavender-400 to-lavender-500' },
-    { id: 'acne', label: 'สิว', icon: Zap, color: '#BE93FF', gradient: 'from-purple-400 to-purple-500' },
+    { id: 'overall', label: t.overview, emoji: '📊', color: '#FF99CB', gradient: 'from-pink-400 to-pink-500' },
+    { id: 'wrinkles', label: t.wrinkles, emoji: '〰️', color: '#73FFA3', gradient: 'from-mint-400 to-mint-500' },
+    { id: 'redness', label: t.redness, emoji: '🔴', color: '#FFB5D9', gradient: 'from-pink-300 to-pink-400' },
+    { id: 'tone', label: t.skinTone, emoji: '🎨', color: '#FFB350', gradient: 'from-peach-400 to-peach-500' },
+    { id: 'oil', label: t.oiliness, emoji: '💧', color: '#7DB8FF', gradient: 'from-blue-400 to-blue-500' },
+    { id: 'eyeBags', label: t.eyeBags, emoji: '👁️', color: '#CBB8FF', gradient: 'from-lavender-400 to-lavender-500' },
+    { id: 'acne', label: t.acne, emoji: '⚫', color: '#B79DFF', gradient: 'from-lavender-300 to-lavender-400' },
   ];
 
   const pastScans = [
     {
       id: 1,
-      date: 'วันนี้ 9:30 น.',
+      date: `${t.today} 9:30 ${t.am}`,
       score: 87,
       improvement: '+2',
       thumbnail: '🌸',
-      topIssue: 'ความชุ่มชื้นดีเยี่ยม',
+      topIssue: t.excellentHydration,
     },
     {
       id: 2,
-      date: 'เมื่อวาน 8:15 น.',
+      date: `${t.yesterday} 8:15 ${t.am}`,
       score: 85,
       improvement: '+1',
       thumbnail: '🌺',
-      topIssue: 'เนื้อผิวดี',
+      topIssue: t.goodTexture,
     },
     {
       id: 3,
-      date: '12 ต.ค. 2025',
+      date: t.language === 'th' ? '12 ต.ค. 2025' : t.language === 'en' ? 'Oct 12, 2025' : '2025年10月12日',
       score: 84,
       improvement: '+2',
       thumbnail: '🌼',
-      topIssue: 'ความยืดหยุ่นดีขึ้น',
+      topIssue: t.elasticityImproved,
     },
     {
       id: 4,
-      date: '10 ต.ค. 2025',
+      date: t.language === 'th' ? '10 ต.ค. 2025' : t.language === 'en' ? 'Oct 10, 2025' : '2025年10月10日',
       score: 82,
       improvement: '0',
       thumbnail: '🌻',
-      topIssue: 'สภาพคงที่',
+      topIssue: t.steady,
     },
   ];
 
   const beforeAfterGallery = [
-    { id: 1, date: '1 ต.ค. → 14 ต.ค.', improvement: '+5', emoji: '✨' },
-    { id: 2, date: '1 ก.ย. → 30 ก.ย.', improvement: '+8', emoji: '🌟' },
-    { id: 3, date: '1 ส.ค. → 31 ส.ค.', improvement: '+6', emoji: '💫' },
+    { 
+      id: 1, 
+      date: t.language === 'th' ? '1 ต.ค. → 14 ต.ค.' : t.language === 'en' ? 'Oct 1 → Oct 14' : '10月1日 → 10月14日', 
+      improvement: '+5', 
+      emoji: '✨' 
+    },
+    { 
+      id: 2, 
+      date: t.language === 'th' ? '1 ก.ย. → 30 ก.ย.' : t.language === 'en' ? 'Sep 1 → Sep 30' : '9月1日 → 9月30日', 
+      improvement: '+8', 
+      emoji: '🌟' 
+    },
+    { 
+      id: 3, 
+      date: t.language === 'th' ? '1 ส.ค. → 31 ส.ค.' : t.language === 'en' ? 'Aug 1 → Aug 31' : '8月1日 → 8月31日', 
+      improvement: '+6', 
+      emoji: '💫' 
+    },
   ];
 
   const currentMetric = metrics.find(m => m.id === selectedMetric);
@@ -134,7 +152,7 @@ export function HistoryPage({ userName = 'Suda' }: HistoryPageProps) {
   const currentData = progressData[selectedTimeframe];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-lavender-50/30 to-blue-50 pb-28 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-lavender-50/50 to-blue-50/30 pb-28 relative overflow-hidden">
       {/* Cute floating decorations - Simplified for performance */}
       <div className="absolute top-20 right-10 text-pink-200 opacity-20">
         <Sparkles className="w-16 h-16" />
@@ -147,8 +165,8 @@ export function HistoryPage({ userName = 'Suda' }: HistoryPageProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
         >
-          <h2 className="text-gray-800 mb-2">ประวัติความก้าวหน้า 📊</h2>
-          <p className="text-sm text-gray-600">ติดตามการพัฒนาผิวของคุณ ✨</p>
+          <h2 className="text-gray-800 mb-2">{t.progressHistory}</h2>
+          <p className="text-sm text-gray-600">{t.trackYourProgress}</p>
         </motion.div>
       </div>
 
@@ -166,27 +184,27 @@ export function HistoryPage({ userName = 'Suda' }: HistoryPageProps) {
             <div className="grid grid-cols-3 gap-4 relative z-10">
               <div className="text-center">
                 <div className="text-3xl bg-gradient-to-br from-pink-500 to-pink-600 bg-clip-text text-transparent mb-1 font-semibold">87</div>
-                <p className="text-xs text-gray-500">คะแนนเฉลี่ย</p>
+                <p className="text-xs text-gray-500">{t.averageScore}</p>
               </div>
               <div className="text-center border-x border-pink-100">
-                <div className="text-3xl bg-gradient-to-br from-mint-500 to-mint-600 bg-clip-text text-transparent mb-1 font-semibold">+{currentTimeframe?.improvement}</div>
+                <div className="text-3xl bg-gradient-to-br from-blue-500 to-lavender-500 bg-clip-text text-transparent mb-1 font-semibold">+{currentTimeframe?.improvement}</div>
                 <p className="text-xs text-gray-500">{currentTimeframe?.description}</p>
               </div>
               <div className="text-center">
                 <div className="flex items-center justify-center gap-1 mb-1">
-                  <Award className="w-6 h-6 text-peach-500" fill="currentColor" />
+                  <Award className="w-6 h-6 text-pink-500" fill="currentColor" />
                 </div>
-                <p className="text-xs text-gray-500">โทนสีผิว</p>
-                <p className="text-xs text-mint-600 font-medium">ดีที่สุด ✨</p>
+                <p className="text-xs text-gray-500">{t.skinTone}</p>
+                <p className="text-xs text-pink-600 font-medium">{t.bestMetric} ✨</p>
               </div>
             </div>
 
             <div className="mt-5 pt-5 border-t border-pink-100 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-lavender-100 to-blue-100 flex items-center justify-center">
-                  <Calendar className="w-4 h-4 text-lavender-600" />
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-100 to-lavender-100 flex items-center justify-center">
+                  <Calendar className="w-4 h-4 text-pink-600" />
                 </div>
-                <p className="text-sm text-gray-600">สแกนล่าสุด: <span className="font-medium text-pink-600">วันนี้ 9:30 น.</span></p>
+                <p className="text-sm text-gray-600">{t.latestScan}: <span className="font-medium text-pink-600">{t.today} 9:30 {t.am}</span></p>
               </div>
             </div>
           </Card>
@@ -268,7 +286,6 @@ export function HistoryPage({ userName = 'Suda' }: HistoryPageProps) {
         >
           <div className="flex gap-2 overflow-x-auto pb-2 -mx-6 px-6" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             {metrics.map((metric, index) => {
-              const Icon = metric.icon;
               const isActive = selectedMetric === metric.id;
               return (
                 <motion.button
@@ -291,7 +308,7 @@ export function HistoryPage({ userName = 'Suda' }: HistoryPageProps) {
                       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                     />
                   )}
-                  <Icon className="w-4 h-4 relative z-10" />
+                  <span className="relative z-10">{metric.emoji}</span>
                   <span className="text-sm relative z-10 font-medium">{metric.label}</span>
                 </motion.button>
               );
@@ -308,7 +325,7 @@ export function HistoryPage({ userName = 'Suda' }: HistoryPageProps) {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
           >
-            <Card className="bg-white rounded-[32px] p-6 shadow-cute-xl border border-pink-100 relative overflow-hidden">
+            <Card className="bg-white rounded-[32px] p-6 shadow-cute-xl border border-blue-100 relative overflow-hidden">
               {/* Decorative background - Removed blur for performance */}
               <div className={`absolute top-0 right-0 w-40 h-40 bg-gradient-to-br ${currentMetric?.gradient} opacity-5 rounded-full`}></div>
               
@@ -318,12 +335,12 @@ export function HistoryPage({ userName = 'Suda' }: HistoryPageProps) {
                     <TrendingUp className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h4 className="text-gray-800 font-semibold">แนวโน้ม {currentTimeframe?.label}</h4>
+                    <h4 className="text-gray-800 font-semibold">{t.trend} {currentTimeframe?.label}</h4>
                     <p className="text-xs text-gray-500">{currentMetric?.label}</p>
                   </div>
                 </div>
                 <Badge className={`bg-gradient-to-r ${currentMetric?.gradient} text-white border-0 shadow-cute-sm px-3 py-1`}>
-                  {currentTimeframe?.improvement} คะแนน ✨
+                  {currentTimeframe?.improvement} {t.points} ✨
                 </Badge>
               </div>
 
@@ -335,27 +352,27 @@ export function HistoryPage({ userName = 'Suda' }: HistoryPageProps) {
                       <stop offset="95%" stopColor={currentMetric?.color} stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#FFE4EA" strokeOpacity={0.3} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#C3DFFF" strokeOpacity={0.3} />
                   <XAxis 
                     dataKey="date" 
                     stroke="#9CA3AF"
                     style={{ fontSize: '12px', fontWeight: 500 }}
                     tickLine={false}
-                    axisLine={{ stroke: '#FFE4EA' }}
+                    axisLine={{ stroke: '#C3DFFF' }}
                   />
                   <YAxis 
                     stroke="#9CA3AF"
                     style={{ fontSize: '12px', fontWeight: 500 }}
                     domain={[60, 95]}
                     tickLine={false}
-                    axisLine={{ stroke: '#FFE4EA' }}
+                    axisLine={{ stroke: '#C3DFFF' }}
                   />
                   <Tooltip 
                     contentStyle={{
                       backgroundColor: 'white',
                       border: 'none',
                       borderRadius: '16px',
-                      boxShadow: '0 8px 24px rgba(255, 182, 193, 0.2)',
+                      boxShadow: '0 8px 24px rgba(125, 184, 255, 0.2)',
                       padding: '12px 16px',
                     }}
                     labelStyle={{
@@ -399,14 +416,14 @@ export function HistoryPage({ userName = 'Suda' }: HistoryPageProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 0.5 }}
         >
-          <Card className="bg-white rounded-[32px] p-6 shadow-cute-lg border border-pink-100">
+          <Card className="bg-white rounded-[32px] p-6 shadow-cute-lg border border-blue-100">
             <div className="flex items-center justify-between mb-5">
               <h4 className="text-gray-800 font-semibold flex items-center gap-2">
-                <span>ประวัติการสแกน</span>
+                <span>{t.scanHistory}</span>
                 <span className="text-lg">📝</span>
               </h4>
-              <Button variant="ghost" className="text-sm text-pink-600 hover:text-pink-700 hover:bg-pink-50 rounded-full px-4">
-                ดูทั้งหมด
+              <Button variant="ghost" className="text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-full px-4">
+                {t.viewAll}
               </Button>
             </div>
 
@@ -418,7 +435,10 @@ export function HistoryPage({ userName = 'Suda' }: HistoryPageProps) {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.4 + index * 0.05 }}
                 >
-                  <div className="flex items-center gap-4 py-3 hover:bg-pink-50/50 rounded-2xl px-2 -mx-2 transition-colors cursor-pointer">
+                  <div 
+                    onClick={() => onViewScanDetail?.(scan.id)}
+                    className="flex items-center gap-4 py-3 hover:bg-pink-50/50 rounded-2xl px-2 -mx-2 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                  >
                     <div className="w-14 h-14 rounded-[20px] bg-gradient-to-br from-pink-100 via-lavender-100 to-blue-100 flex items-center justify-center text-2xl shadow-cute-sm">
                       {scan.thumbnail}
                     </div>
@@ -436,8 +456,8 @@ export function HistoryPage({ userName = 'Suda' }: HistoryPageProps) {
                     </div>
 
                     <div className="text-center">
-                      <div className="text-2xl bg-gradient-to-br from-pink-500 to-pink-600 bg-clip-text text-transparent font-semibold mb-1">{scan.score}</div>
-                      <p className="text-xs text-gray-400">คะแนน</p>
+                      <div className="text-2xl bg-gradient-to-br from-pink-500 to-lavender-500 bg-clip-text text-transparent font-semibold mb-1">{scan.score}</div>
+                      <p className="text-xs text-gray-400">{t.score}</p>
                     </div>
 
                     <ChevronRight className="w-5 h-5 text-pink-300" />
@@ -465,7 +485,7 @@ export function HistoryPage({ userName = 'Suda' }: HistoryPageProps) {
               <div className="w-10 h-10 rounded-full bg-white/80 flex items-center justify-center">
                 <ImageIcon className="w-5 h-5 text-lavender-600" />
               </div>
-              <h4 className="text-gray-800 font-semibold">แกลเลอรี่ก่อน-หลัง ✨</h4>
+              <h4 className="text-gray-800 font-semibold">{t.gallery}</h4>
             </div>
 
             <div className="grid grid-cols-1 gap-3 relative z-10">
@@ -487,7 +507,7 @@ export function HistoryPage({ userName = 'Suda' }: HistoryPageProps) {
                       <p className="text-gray-800 font-medium text-sm">{item.date}</p>
                       <p className="text-sm text-mint-600 font-semibold flex items-center gap-1">
                         <TrendingUp className="w-3 h-3" />
-                        ดีขึ้น {item.improvement} คะแนน
+                        {t.improvedBy} {item.improvement} {t.points}
                       </p>
                     </div>
                   </div>
@@ -501,7 +521,7 @@ export function HistoryPage({ userName = 'Suda' }: HistoryPageProps) {
               className="w-full mt-4 border-lavender-300 text-lavender-700 hover:bg-white/80 rounded-[20px] h-12 font-semibold bg-white/80 shadow-cute-sm"
             >
               <ImageIcon className="w-4 h-4 mr-2" />
-              ดูแกลเลอรี่ทั้งหมด 🖼️
+              {t.viewAllGallery}
             </Button>
           </Card>
         </motion.div>
@@ -513,14 +533,14 @@ export function HistoryPage({ userName = 'Suda' }: HistoryPageProps) {
           transition={{ delay: 0.6, duration: 0.5 }}
           className="text-center pb-4"
         >
-          <div className="bg-white rounded-[32px] p-6 shadow-cute-lg border border-pink-100 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-pink-50 via-transparent to-blue-50 opacity-50"></div>
+          <div className="bg-white rounded-[32px] p-6 shadow-cute-lg border border-blue-100 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-transparent to-lavender-50 opacity-50"></div>
             <p className="text-4xl mb-3 relative z-10">
               🎉
             </p>
-            <p className="text-gray-700 mb-1 font-semibold relative z-10">ทำได้ดีมากค่ะคุณ{userName}!</p>
+            <p className="text-gray-700 mb-1 font-semibold relative z-10">{t.greatJobName.replace('{name}', userName)}</p>
             <p className="text-sm text-gray-500 relative z-10">
-              คุณพัฒนาคะแนนผิวไปแล้ว <span className="font-semibold text-pink-600">+17 คะแนน</span> ในเดือนนี้ ✨
+              {t.youImprovedPoints} <span className="font-semibold text-blue-600">+17 {t.points}</span> {t.improvementThis}
             </p>
           </div>
         </motion.div>

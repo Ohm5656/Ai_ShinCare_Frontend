@@ -9,50 +9,59 @@
   --font-display: 'Quicksand', 'Prompt', -apple-system, sans-serif;
   --font-body: 'Prompt', 'Quicksand', -apple-system, sans-serif;
   
-  /* Cute Pastel Color Palette 🎨 */
-  --background: #FFFBF8;
-  --foreground: #5A4A42;
+  /* Fresh Pastel Color Palette 🎨 */
+  --background: #FFF9FC;
+  --foreground: #4B4058;
   
-  /* Soft Pink Tones 💗 */
-  --pink-50: #FFF5F7;
-  --pink-100: #FFE4EA;
-  --pink-200: #FFC9D6;
-  --pink-300: #FFB0C4;
-  --pink-400: #FF8FAA;
-  --pink-500: #FF6B8F;
-  --pink-600: #E85577;
+  /* Soft Pink Pastel Tones 💗 */
+  --pink-50: #FFF5F9;
+  --pink-100: #FFE8F3;
+  --pink-200: #FFD1E7;
+  --pink-300: #FFB5D9;
+  --pink-400: #FF99CB;
+  --pink-500: #FF7DBD;
+  --pink-600: #F061A8;
   
-  /* Soft Blue/Purple Tones 💙 */
-  --blue-50: #F0F4FF;
-  --blue-100: #E1E9FF;
-  --blue-200: #C3D4FF;
-  --blue-300: #A5BEFF;
-  --blue-400: #87A9FF;
-  --blue-500: #6993FF;
+  /* Soft Blue Pastel Tones 💙 */
+  --blue-50: #F0F7FF;
+  --blue-100: #E1EFFF;
+  --blue-200: #C3DFFF;
+  --blue-300: #A0CBFF;
+  --blue-400: #7DB8FF;
+  --blue-500: #5AA5FF;
   
-  /* Soft Lavender Tones 💜 */
-  --lavender-50: #F9F5FF;
-  --lavender-100: #F2E9FF;
-  --lavender-200: #E5D4FF;
-  --lavender-300: #D8BEFF;
-  --lavender-400: #CBA9FF;
-  --lavender-500: #BE93FF;
+  /* Soft Lavender Pastel Tones 💜 */
+  --lavender-50: #F7F5FF;
+  --lavender-100: #EFE9FF;
+  --lavender-200: #DFD3FF;
+  --lavender-300: #CBB8FF;
+  --lavender-400: #B79DFF;
+  --lavender-500: #A382FF;
   
-  /* Soft Yellow/Peach Tones 🌟 */
+  /* Soft Peach Pastel Tones 🌟 */
   --peach-50: #FFF9F0;
-  --peach-100: #FFF0DC;
-  --peach-200: #FFE1B9;
-  --peach-300: #FFD196;
-  --peach-400: #FFC273;
-  --peach-500: #FFB350;
+  --peach-100: #FFF2DC;
+  --peach-200: #FFE5B9;
+  --peach-300: #FFD596;
+  --peach-400: #FFC573;
+  --peach-500: #FFB550;
   
-  /* Mint Green Tones 🌿 */
-  --mint-50: #F0FFF4;
-  --mint-100: #DCFFE8;
-  --mint-200: #B9FFD1;
-  --mint-300: #96FFBA;
-  --mint-400: #73FFA3;
-  --mint-500: #50FF8C;
+  /* Soft Mint Pastel Tones 🌿 */
+  --mint-50: #F0FFF7;
+  --mint-100: #E1FFEF;
+  --mint-200: #C3FFDF;
+  --mint-300: #A0FFCB;
+  --mint-400: #7DFFB8;
+  --mint-500: #5AFFA5;
+  
+  /* Soft Red Pastel Tones 🔴 */
+  --red-50: #FFF5F5;
+  --red-100: #FFE5E5;
+  --red-200: #FFCCCC;
+  --red-300: #FFB3B3;
+  --red-400: #FF9999;
+  --red-500: #FF8080;
+  --red-600: #FF6B7D;
   
   /* Design System Colors */
   --card: #FFFFFF;
@@ -60,27 +69,27 @@
   --popover: #FFFFFF;
   --popover-foreground: #5A4A42;
   
-  --primary: var(--pink-500);
+  --primary: var(--pink-400);
   --primary-foreground: #FFFFFF;
   
-  --secondary: var(--lavender-300);
-  --secondary-foreground: #5A4A42;
+  --secondary: var(--blue-300);
+  --secondary-foreground: #4B4058;
   
-  --accent: var(--peach-300);
-  --accent-foreground: #5A4A42;
+  --accent: var(--lavender-300);
+  --accent-foreground: #4B4058;
   
   --muted: var(--pink-50);
-  --muted-foreground: #9D8E87;
+  --muted-foreground: #7A6B88;
   
-  --destructive: #FF6B6B;
+  --destructive: #FF6B7D;
   --destructive-foreground: #FFFFFF;
   
-  --border: rgba(255, 182, 193, 0.2);
+  --border: rgba(255, 181, 217, 0.25);
   --input: transparent;
   --input-background: var(--pink-50);
-  --switch-background: var(--lavender-200);
+  --switch-background: var(--pink-200);
   
-  --ring: var(--pink-400);
+  --ring: var(--blue-400);
   
   /* Chart Colors - Cute Pastels */
   --chart-1: var(--pink-400);
@@ -96,11 +105,11 @@
   --radius-xl: 2.5rem;
   --radius-full: 9999px;
   
-  /* Shadows - Soft & Dreamy */
-  --shadow-sm: 0 2px 8px rgba(255, 182, 193, 0.1);
-  --shadow-md: 0 4px 16px rgba(255, 182, 193, 0.15);
-  --shadow-lg: 0 8px 24px rgba(255, 182, 193, 0.2);
-  --shadow-xl: 0 16px 40px rgba(255, 182, 193, 0.25);
+  /* Shadows - Soft & Fresh */
+  --shadow-sm: 0 2px 8px rgba(255, 153, 203, 0.12);
+  --shadow-md: 0 4px 16px rgba(255, 153, 203, 0.18);
+  --shadow-lg: 0 8px 24px rgba(255, 153, 203, 0.22);
+  --shadow-xl: 0 16px 40px rgba(255, 153, 203, 0.28);
   
   /* Font Weights */
   --font-weight-light: 300;
@@ -111,13 +120,13 @@
   
   /* Sidebar */
   --sidebar: #FFFFFF;
-  --sidebar-foreground: #5A4A42;
-  --sidebar-primary: var(--pink-500);
+  --sidebar-foreground: #4B4058;
+  --sidebar-primary: var(--blue-400);
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: var(--pink-50);
-  --sidebar-accent-foreground: #5A4A42;
-  --sidebar-border: rgba(255, 182, 193, 0.2);
-  --sidebar-ring: var(--pink-400);
+  --sidebar-accent: var(--blue-50);
+  --sidebar-accent-foreground: #4B4058;
+  --sidebar-border: rgba(163, 200, 255, 0.2);
+  --sidebar-ring: var(--blue-400);
 }
 
 @theme inline {
@@ -188,6 +197,15 @@
   --color-mint-300: var(--mint-300);
   --color-mint-400: var(--mint-400);
   --color-mint-500: var(--mint-500);
+  
+  /* Red Palette */
+  --color-red-50: var(--red-50);
+  --color-red-100: var(--red-100);
+  --color-red-200: var(--red-200);
+  --color-red-300: var(--red-300);
+  --color-red-400: var(--red-400);
+  --color-red-500: var(--red-500);
+  --color-red-600: var(--red-600);
   
   /* Radius */
   --radius-sm: var(--radius-sm);
@@ -352,7 +370,7 @@
     }
   }
   
-  /* Cute gradient backgrounds */
+  /* Fresh pastel gradient backgrounds */
   .bg-gradient-cute-pink {
     background: linear-gradient(135deg, var(--pink-100) 0%, var(--pink-200) 100%);
   }
