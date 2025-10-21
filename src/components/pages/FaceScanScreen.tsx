@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Progress } from "../ui/progress";
 import { X, ArrowRight } from "lucide-react";
-
-// === Mediapipe ===
 import { FaceMesh } from "@mediapipe/face_mesh";
 import { Camera } from "@mediapipe/camera_utils";
-import { drawConnectors, drawLandmarks } from "@mediapipe/drawing_utils";
 
+/* =============================================
+   CONFIG
+============================================= */
 interface FaceScanScreenProps {
   onAnalyzeResult: (result: any) => void;
   onBack: () => void;
@@ -23,109 +23,154 @@ const API_BASE =
   import.meta.env.VITE_API_BASE ||
   "https://aishincarebackend-production.up.railway.app";
 
-/* --------------------------- Face Guide SVG overlay -------------------------- */
-function FaceGuideSVG() {
-  // วงรี + wireframe แบบ glow
+/* =============================================
+   Face Wireframe Overlay (เหมือน GlowbieBell)
+============================================= */
+function FaceWireframeOverlay() {
   return (
     <svg
-      viewBox="0 0 360 520"
-      className="absolute -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 pointer-events-none w-[310px] h-[440px] drop-shadow-[0_0_18px_rgba(255,105,180,0.65)]"
+      viewBox="0 0 320 440"
+      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[440px] pointer-events-none"
     >
       <defs>
-        <radialGradient id="g" cx="50%" cy="45%" r="60%">
-          <stop offset="0%" stopColor="rgba(255,255,255,0.5)" />
-          <stop offset="100%" stopColor="rgba(255,105,180,0.25)" />
-        </radialGradient>
         <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="3.5" result="coloredBlur" />
+          <feGaussianBlur stdDeviation="3.5" result="blur" />
           <feMerge>
-            <feMergeNode in="coloredBlur" />
+            <feMergeNode in="blur" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
+        <radialGradient id="dotGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#fff" />
+          <stop offset="100%" stopColor="#ff8acb" />
+        </radialGradient>
       </defs>
 
-      {/* วงรีหลัก */}
-      <ellipse
-        cx="180"
-        cy="260"
-        rx="140"
-        ry="210"
+      {/* กรอบโครงหน้า */}
+      <path
+        d="M60 170
+           L75 210  90 240  108 270  125 300  140 325
+           L160 340
+           L180 325  195 300  212 270  230 240  245 210
+           L260 170
+           C255 130 215 80 160 70
+           C105 80 65 130 60 170 Z"
+        stroke="#ff94c6"
+        strokeWidth="1.8"
         fill="none"
-        stroke="url(#g)"
-        strokeWidth="3"
         filter="url(#glow)"
       />
-      {/* เส้น Wireframe บาง ๆ ให้ฟีล GlowbieBell */}
+
+      {/* โครงคิ้ว */}
+      <path
+        d="M90 150 C115 130,135 130,155 150"
+        stroke="#ffb0d4"
+        strokeWidth="1.4"
+        filter="url(#glow)"
+        fill="none"
+      />
+      <path
+        d="M165 150 C185 130,205 130,230 150"
+        stroke="#ffb0d4"
+        strokeWidth="1.4"
+        filter="url(#glow)"
+        fill="none"
+      />
+
+      {/* โครงตา */}
+      <path
+        d="M105 175 C120 168,135 168,145 175 C135 182,120 182,105 175 Z"
+        stroke="#ffcce5"
+        strokeWidth="1.2"
+        fill="none"
+        filter="url(#glow)"
+      />
+      <path
+        d="M175 175 C190 168,205 168,220 175 C205 182,190 182,175 175 Z"
+        stroke="#ffcce5"
+        strokeWidth="1.2"
+        fill="none"
+        filter="url(#glow)"
+      />
+
+      {/* จมูก */}
+      <path
+        d="M160 150 L160 180 L160 210"
+        stroke="#ffacd8"
+        strokeWidth="1.3"
+        filter="url(#glow)"
+        fill="none"
+      />
+      <path
+        d="M145 220 C155 225,165 225,175 220"
+        stroke="#ffcce5"
+        strokeWidth="1.2"
+        filter="url(#glow)"
+        fill="none"
+      />
+
+      {/* ปาก */}
+      <path
+        d="M125 265 C145 280,175 280,195 265"
+        stroke="#ffa7d3"
+        strokeWidth="1.5"
+        filter="url(#glow)"
+        fill="none"
+      />
+      <path
+        d="M130 260 C150 270,170 270,190 260"
+        stroke="#ffd0e5"
+        strokeWidth="1.2"
+        filter="url(#glow)"
+        fill="none"
+      />
+
+      {/* คาง */}
+      <path
+        d="M140 320 C150 330,170 330,180 320"
+        stroke="#ff9bd1"
+        strokeWidth="1.4"
+        filter="url(#glow)"
+        fill="none"
+      />
+
+      {/* จุด (landmarks) */}
       {[
-        [40, 120, 320, 120],
-        [20, 200, 340, 200],
-        [40, 280, 320, 280],
-        [60, 360, 300, 360],
-      ].map((line, i) => (
-        <line
-          key={i}
-          x1={line[0]}
-          y1={line[1]}
-          x2={line[2]}
-          y2={line[3]}
-          stroke="rgba(255,182,206,0.55)"
-          strokeWidth="1"
-        />
-      ))}
-      {/* จุด ๆ เรืองแสง */}
-      {[...Array(26)].map((_, i) => (
-        <circle
-          key={i}
-          cx={60 + (i % 13) * 20}
-          cy={160 + Math.floor(i / 13) * 240}
-          r="2.2"
-          fill="rgba(255,255,255,0.85)"
-        />
+        [60,170],[260,170],[160,70],
+        [105,175],[220,175],
+        [160,210],[125,265],[195,265],[160,340]
+      ].map(([x,y],i)=>(
+        <circle key={i} cx={x} cy={y} r="2.5" fill="url(#dotGrad)" filter="url(#glow)" />
       ))}
     </svg>
   );
 }
 
-/* ------------------------------- Stepper UI -------------------------------- */
-function AngleStepper({ step }: { step: Step }) {
+/* =============================================
+   Stepper UI
+============================================= */
+function StepIndicator({ step }: { step: Step }) {
   const labels = ["หน้าตรง", "หันซ้าย", "หันขวา"];
   return (
-    <div className="absolute left-0 right-0 top-3 z-30 flex items-center justify-center gap-3">
-      {labels.map((lb, idx) => {
-        const active = idx === step;
-        const done = idx < step;
+    <div className="absolute top-3 left-0 right-0 flex justify-center items-center gap-3 z-30">
+      {labels.map((lb, i) => {
+        const active = i === step;
         return (
-          <div key={lb} className="flex items-center gap-3">
+          <div key={i} className="flex items-center gap-3">
             <div
-              className={[
-                "w-14 h-14 rounded-full grid place-items-center border-2",
-                done
-                  ? "border-emerald-400 bg-emerald-400/10"
-                  : active
-                  ? "border-pink-400 bg-pink-400/10"
-                  : "border-white/30",
-              ].join(" ")}
+              className={`w-14 h-14 rounded-full grid place-items-center border-2 ${
+                active ? "border-pink-400 bg-pink-400/10" : "border-white/30"
+              }`}
             >
               <span
-                className={[
-                  "text-[11px] font-semibold",
-                  done ? "text-emerald-300" : active ? "text-pink-200" : "text-white/70",
-                ].join(" ")}
+                className={`text-[11px] font-semibold ${
+                  active ? "text-pink-200" : "text-white/70"
+                }`}
               >
                 {lb}
               </span>
             </div>
-            {idx < labels.length - 1 && (
-              <motion.div
-                className="text-white/60"
-                initial={{ x: -6, opacity: 0.5 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ repeat: Infinity, repeatType: "reverse", duration: 0.7 }}
-              >
-                <ArrowRight className="w-4 h-4" />
-              </motion.div>
-            )}
+            {i < 2 && <ArrowRight className="w-4 h-4 text-white/60" />}
           </div>
         );
       })}
@@ -133,28 +178,11 @@ function AngleStepper({ step }: { step: Step }) {
   );
 }
 
-/* ---------------------------- Loading dot widget ---------------------------- */
-function LoadingDots({ show }: { show: boolean }) {
-  if (!show) return null;
-  return (
-    <div className="absolute bottom-28 left-0 right-0 z-20 flex items-center justify-center gap-2">
-      {[0, 1, 2].map((i) => (
-        <motion.span
-          key={i}
-          className="w-2.5 h-2.5 rounded-full bg-white/85"
-          animate={{ y: [-2, 0, -2], opacity: [0.3, 1, 0.3] }}
-          transition={{ repeat: Infinity, duration: 0.9, delay: i * 0.15 }}
-        />
-      ))}
-    </div>
-  );
-}
-
-/* ================================ Main Page ================================ */
+/* =============================================
+   FaceScanScreen Component
+============================================= */
 export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
   const [step, setStep] = useState<Step>(0);
   const [thumbs, setThumbs] = useState<string[]>([]);
   const [status, setStatus] = useState("📷 กำลังเปิดกล้อง...");
@@ -162,15 +190,10 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
   const [stablePercent, setStablePercent] = useState(0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
+  const soundRef = useRef<HTMLAudioElement | null>(null);
   const startStableTime = useRef<number | null>(null);
   const stepLocked = useRef(false);
-  const capturedSteps = useRef<Set<number>>(new Set());
 
-  const soundRef = useRef<HTMLAudioElement | null>(null);
-  const faceMeshRef = useRef<FaceMesh | null>(null);
-  const cameraRef = useRef<Camera | null>(null);
-
-  /* ------------------------------ init & dispose ------------------------------ */
   useEffect(() => {
     soundRef.current = new Audio("/capture.mp3");
 
@@ -183,9 +206,6 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
       minDetectionConfidence: 0.6,
       minTrackingConfidence: 0.6,
     });
-    faceMesh.onResults(onResults);
-    faceMeshRef.current = faceMesh;
-
     const v = videoRef.current!;
     const cam = new Camera(v, {
       onFrame: async () => {
@@ -195,122 +215,37 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
       height: 480,
     });
     cam.start();
-    cameraRef.current = cam;
-
-    setStatus("📸 กรุณาหน้าตรงให้อยู่ในกรอบ");
-
-    return () => {
-      cameraRef.current?.stop();
-      faceMeshRef.current?.close();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setStatus("🧭 วางหน้าให้อยู่ในกรอบกลางหน้าจอ");
   }, []);
 
-  /* ------------------------------ result handler ------------------------------ */
-  function onResults(results: any) {
-    const c = canvasRef.current!;
-    const ctx = c.getContext("2d")!;
-    ctx.clearRect(0, 0, c.width, c.height);
-
-    if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
-      startStableTime.current = null;
-      setStablePercent(0);
-      setStatus("🔍 ไม่พบใบหน้า • กรุณาวางหน้าให้อยู่ในกรอบกลางหน้าจอ");
-      return;
+  /* -------------------- mock step change / capture -------------------- */
+  useEffect(() => {
+    if (stablePercent >= 100 && !stepLocked.current) {
+      stepLocked.current = true;
+      soundRef.current?.play();
+      captureThumb();
+      setTimeout(() => {
+        if (step < 2) {
+          setStep((step + 1) as Step);
+          stepLocked.current = false;
+          setStablePercent(0);
+        } else {
+          setStatus("🎉 ครบทั้ง 3 มุมแล้ว! เริ่มวิเคราะห์ผิว...");
+          startAnalyze();
+        }
+      }, NEXT_DELAY);
     }
+  }, [stablePercent]);
 
-    const lm = results.multiFaceLandmarks[0];
+  /* -------------------- จำลองความนิ่ง -------------------- */
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setStablePercent((p) => (p < 100 ? p + 5 : 100));
+    }, 150);
+    return () => clearInterval(timer);
+  }, []);
 
-    // mesh glow
-    drawConnectors(ctx, lm, FaceMesh.FACEMESH_TESSELATION, {
-      color: "rgba(255,153,204,0.35)",
-      lineWidth: 0.5,
-    });
-    drawLandmarks(ctx, lm, {
-      color: "rgba(255,255,255,0.7)",
-      radius: 0.55,
-    });
-
-    // pose heuristic (ไม่ใช้ yaw)
-    const left = lm[234];
-    const right = lm[454];
-    const nose = lm[1];
-    const ratio = (nose.x - left.x) / (right.x - left.x);
-
-    let pose: "front" | "left" | "right" = "front";
-    if (ratio < 0.35) pose = "left";
-    else if (ratio > 0.65) pose = "right";
-
-    const target = step === 0 ? "front" : step === 1 ? "left" : "right";
-
-    // ต้องอยู่กลางวงรี
-    const faceCenterX = (left.x + right.x) / 2;
-    const faceCenterY = (lm[10].y + lm[152].y) / 2;
-    const inCenter =
-      Math.abs(faceCenterX - 0.5) < 0.08 && Math.abs(faceCenterY - 0.5) < 0.12;
-
-    if (!inCenter) {
-      startStableTime.current = null;
-      setStablePercent(0);
-      setStatus("🧭 วางหน้าให้อยู่ในกรอบกลางหน้าจอ");
-      return;
-    }
-
-    if (pose === target) {
-      if (!startStableTime.current) startStableTime.current = Date.now();
-      const elapsed = Date.now() - startStableTime.current;
-      setStablePercent(Math.min((elapsed / STABLE_TIME) * 100, 100));
-
-      const label =
-        target === "front"
-          ? "หน้าตรง"
-          : target === "left"
-          ? "หันซ้าย"
-          : "หันขวา";
-      setStatus(`✅ ${label} ถูกต้อง (${(elapsed / 1000).toFixed(1)}s / 3s)`);
-
-      // ครบเวลาและยังไม่เคยถ่ายมุมนี้
-      if (
-        elapsed >= STABLE_TIME &&
-        !stepLocked.current &&
-        !capturedSteps.current.has(step)
-      ) {
-        stepLocked.current = true;
-        capturedSteps.current.add(step);
-        soundRef.current?.play();
-        captureThumb();
-        setStablePercent(0);
-        setStatus(`📸 บันทึกภาพมุม ${label} แล้ว!`);
-
-        setTimeout(() => handleNextStep(), NEXT_DELAY);
-      }
-    } else {
-      startStableTime.current = null;
-      setStablePercent(0);
-      if (target === "left") setStatus("⬅️ กรุณาหันซ้ายช้า ๆ");
-      else if (target === "right") setStatus("➡️ กรุณาหันขวาช้า ๆ");
-      else setStatus("📸 กรุณามองตรงไปข้างหน้า");
-    }
-  }
-
-  /* --------------------------------- steps --------------------------------- */
-  function handleNextStep() {
-    if (step < 2) {
-      const next = (step + 1) as Step;
-      setStep(next);
-      startStableTime.current = null;
-      setStablePercent(0);
-      stepLocked.current = false;
-      // แถบคำสั่งเลื่อน/แอนิเมชัน
-      const nextTxt = next === 1 ? "หันซ้าย" : "หันขวา";
-      setStatus(`🟡 เตรียม${nextTxt}...`);
-    } else {
-      setStatus("🎉 ครบทั้ง 3 มุมแล้ว! เริ่มวิเคราะห์ผิว...");
-      startAnalyze();
-    }
-  }
-
-  /* -------------------------------- capture -------------------------------- */
+  /* -------------------- ถ่ายรูป -------------------- */
   function captureThumb() {
     const v = videoRef.current!;
     if (!v) return;
@@ -324,14 +259,18 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
     setThumbs((t) => [...t, c.toDataURL("image/jpeg")]);
   }
 
-  /* ------------------------------- analyze API ------------------------------ */
+  /* -------------------- วิเคราะห์ -------------------- */
   async function startAnalyze() {
     setIsAnalyzing(true);
-    const blobs = await Promise.all(thumbs.map((t) => fetch(t).then((r) => r.blob())));
+    const blobs = await Promise.all(
+      thumbs.map((t) => fetch(t).then((r) => r.blob()))
+    );
     const form = new FormData();
     blobs.forEach((b, i) => form.append("files", b, `angle_${i}.jpg`));
-
-    const res = await fetch(`${API_BASE}/analyze/skin`, { method: "POST", body: form });
+    const res = await fetch(`${API_BASE}/analyze/skin`, {
+      method: "POST",
+      body: form,
+    });
     const data = await res.json();
 
     let p = 0;
@@ -345,7 +284,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
     }, 70);
   }
 
-  /* ----------------------------------- UI ---------------------------------- */
+  /* -------------------- UI -------------------- */
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
       <button
@@ -355,10 +294,8 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         <X className="w-6 h-6 text-white" />
       </button>
 
-      {/* stepper + slide hint */}
-      <AngleStepper step={step} />
+      <StepIndicator step={step} />
 
-      {/* video & mesh */}
       <video
         ref={videoRef}
         className="absolute inset-0 w-full h-full object-cover transform -scale-x-100"
@@ -366,26 +303,25 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         muted
         playsInline
       />
-      <canvas
-        ref={canvasRef}
-        width={640}
-        height={480}
-        className="absolute inset-0 w-full h-full pointer-events-none"
-        style={{ filter: "drop-shadow(0 0 10px rgba(255,105,180,0.7))" }}
-      />
 
-      {/* face guide overlay */}
-      <FaceGuideSVG />
+      {/* 🔹 โครงหน้า GlowbieBell */}
+      <FaceWireframeOverlay />
 
-      {/* glow pulse วงรีขอบ */}
+      {/* 🔹 วงรี glow pulse */}
       <motion.div
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-pink-400/70"
         style={{ width: 300, height: 420 }}
-        animate={{ boxShadow: ["0 0 0px rgba(255,105,180,0.4)","0 0 28px rgba(255,105,180,0.85)","0 0 0px rgba(255,105,180,0.4)"] }}
+        animate={{
+          boxShadow: [
+            "0 0 0px rgba(255,105,180,0.4)",
+            "0 0 28px rgba(255,105,180,0.85)",
+            "0 0 0px rgba(255,105,180,0.4)",
+          ],
+        }}
         transition={{ duration: 1.8, repeat: Infinity }}
       />
 
-      {/* status bubble */}
+      {/* สถานะ */}
       <motion.div
         className="absolute top-20 w-full text-center z-30 px-4"
         initial={{ opacity: 0 }}
@@ -396,10 +332,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         </div>
       </motion.div>
 
-      {/* loading dots ระหว่างจับเวลา หรือกำลังจัดท่าทาง */}
-      <LoadingDots show={!isAnalyzing && !stepLocked.current} />
-
-      {/* progress ตอนกำลังนิ่ง */}
+      {/* แถบ stable progress */}
       {!isAnalyzing && stablePercent > 0 && (
         <div className="absolute bottom-24 w-full flex justify-center z-30">
           <div className="w-2/3">
@@ -426,7 +359,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         )}
       </AnimatePresence>
 
-      {/* thumbs */}
+      {/* รูปถ่ายแต่ละมุม */}
       <div className="absolute bottom-8 w-full flex justify-center gap-4 z-30">
         {thumbs.map((img, i) => (
           <img
