@@ -4,7 +4,8 @@ import { X, HelpCircle } from "lucide-react";
 import { Progress } from "../ui/progress";
 import { FaceMesh } from "@mediapipe/face_mesh";
 import { Camera } from "@mediapipe/camera_utils";
-import faceGuideImage from "../../assets/face_mask_scan.png";
+const faceGuideImage = "/face_mask_scan.png";
+
 
 /* =============================================
    CONFIG
