@@ -5,9 +5,6 @@ import { Progress } from "../ui/progress";
 import { FaceMesh } from "@mediapipe/face_mesh";
 import { Camera } from "@mediapipe/camera_utils";
 
-// ✅ ใช้รูปจาก public folder
-const faceGuideImage = "/face_mask_scan.png";
-
 /* =============================================
    CONFIG
 ============================================= */
@@ -16,14 +13,16 @@ interface FaceScanScreenProps {
   onBack: () => void;
 }
 
-const STEPS = ["front", "left", "right"] as const;
+const STEPS = ["หน้าตรง", "หันซ้าย", "หันขวา"] as const;
 type Step = 0 | 1 | 2;
-const STABLE_TIME = 2000; // ต้องนิ่งกี่มิลลิวินาทีถึงจะถ่าย
-const NEXT_DELAY = 1200; // เวลาค้างภาพก่อนเปลี่ยนมุม
-const TARGET_YAW = [0, +22, -22]; // มุมเป้าหมาย
-const YAW_TOL = [10, 12, 12]; // ค่าความคลาดเคลื่อน yaw
-const MAX_ROLL = 12; // เอียงศีรษะได้สูงสุด
+
+const STABLE_TIME = 2000; // ต้องอยู่นิ่ง 2 วิ
+const NEXT_DELAY = 1000; // ค้างภาพไว้ 1 วิ
+const TARGET_YAW = [0, +22, -22];
+const YAW_TOL = [10, 12, 12];
+const MAX_ROLL = 12;
 const CENTER_BOX = { xMin: 0.35, xMax: 0.65, yMin: 0.28, yMax: 0.72 };
+
 const API_BASE =
   import.meta.env.VITE_API_BASE ||
   "https://aishincarebackend-production.up.railway.app";
@@ -33,7 +32,7 @@ const API_BASE =
 ============================================= */
 export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [status, setStatus] = useState("📷 กำลังเปิดกล้อง...");
+  const [status, setStatus] = useState("📷 เปิดกล้อง...");
   const [thumbs, setThumbs] = useState<string[]>([]);
   const [step, setStep] = useState<Step>(0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -46,7 +45,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
   const stepLocked = useRef(false);
   const soundRef = useRef<HTMLAudioElement | null>(null);
 
-  /* ---------- sync stepRef ---------- */
+  /* ---------- update stepRef ---------- */
   useEffect(() => {
     stepRef.current = step;
   }, [step]);
@@ -76,11 +75,9 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
       if (!results.multiFaceLandmarks?.length || isAnalyzing) return;
       const landmarks = results.multiFaceLandmarks[0];
 
-      // landmark indices
       const LEFT_EYE = 33;
       const RIGHT_EYE = 263;
       const NOSE_TIP = 1;
-
       const leftEye = landmarks[LEFT_EYE];
       const rightEye = landmarks[RIGHT_EYE];
       const nose = landmarks[NOSE_TIP];
@@ -100,18 +97,14 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         nose.y >= CENTER_BOX.yMin &&
         nose.y <= CENTER_BOX.yMax;
 
-      // Update status
       if (!centerOk) setStatus("📍 ขยับหน้าให้อยู่กลางกรอบ");
       else if (!rollOk) setStatus("↕️ ปรับศีรษะให้ตรง");
       else if (!yawOk) {
         if (s === 0) setStatus("➡️ หันหน้าให้นิ่งตรงกล้อง");
         else if (s === 1) setStatus("⬅️ หันไปทางซ้ายเล็กน้อย");
         else setStatus("➡️ หันไปทางขวาเล็กน้อย");
-      } else {
-        setStatus(`✅ มุมถูกต้อง — ${["หน้าตรง", "หันซ้าย", "หันขวา"][s]}`);
-      }
+      } else setStatus(`✅ มุมถูกต้อง — ${STEPS[s]}`);
 
-      // Detect stability
       const inTarget = yawOk && rollOk && centerOk;
       const now = performance.now();
       if (inTarget) {
@@ -128,7 +121,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
     return () => cam.stop();
   }, [isAnalyzing]);
 
-  /* ---------- Capture complete step ---------- */
+  /* ---------- ถ่ายภาพครบ ---------- */
   useEffect(() => {
     if (stablePercent >= 100 && !stepLocked.current) {
       stepLocked.current = true;
@@ -153,7 +146,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
     }
   }, [stablePercent]);
 
-  /* ---------- Capture function ---------- */
+  /* ---------- ถ่ายภาพ ---------- */
   function captureFrame() {
     const v = videoRef.current!;
     const c = document.createElement("canvas");
@@ -166,7 +159,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
     return c.toDataURL("image/jpeg");
   }
 
-  /* ---------- Start analysis ---------- */
+  /* ---------- เริ่มวิเคราะห์ ---------- */
   async function startAnalyze() {
     setIsAnalyzing(true);
     const blobs = await Promise.all(thumbs.map((t) => fetch(t).then((r) => r.blob())));
@@ -193,7 +186,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
       className="min-h-screen relative flex flex-col items-center justify-center overflow-hidden text-white"
       style={{ background: "linear-gradient(180deg, #0A0F1C, #111827)" }}
     >
-      {/* กล้อง */}
+      {/* กล้องจริง */}
       <video
         ref={videoRef}
         className="absolute inset-0 w-full h-full object-cover transform -scale-x-100"
@@ -214,13 +207,13 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         <X className="w-6 h-6 text-white" />
       </motion.button>
 
-      {/* กรอบสแกน */}
+      {/* กรอบ Glow Figma-style */}
       <motion.div
         className="relative z-20 flex flex-col items-center justify-center"
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
       >
-        {/* glow */}
+        {/* Glow */}
         <motion.div
           className="absolute rounded-3xl"
           animate={{
@@ -234,22 +227,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
           style={{ width: 280, height: 340 }}
         />
 
-        {/* ภาพโครงหน้า / snapshot */}
-        {previewImage ? (
-          <img
-            src={previewImage}
-            alt="snapshot"
-            className="w-[280px] h-[340px] object-cover rounded-3xl border-2 border-pink-400"
-          />
-        ) : (
-          <img
-            src={faceGuideImage}
-            alt="guide"
-            className="w-[280px] h-[340px] object-contain opacity-85 drop-shadow-[0_0_25px_rgba(255,138,212,0.6)]"
-          />
-        )}
-
-        {/* เส้นเลเซอร์ */}
+        {/* สายเลเซอร์ */}
         {isAnalyzing && (
           <motion.div
             className="absolute left-0 right-0 h-1"
@@ -262,28 +240,28 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
             }}
           />
         )}
-
-        {/* สถานะ */}
-        <motion.div
-          key={status}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-6 text-center z-20"
-        >
-          <p
-            className="px-6 py-3 rounded-full inline-block backdrop-blur-md"
-            style={{
-              background: "rgba(255,255,255,0.1)",
-              border: "1px solid rgba(255,255,255,0.2)",
-              color: "#67B5FF",
-            }}
-          >
-            {status}
-          </p>
-        </motion.div>
       </motion.div>
 
-      {/* Progress bar */}
+      {/* ข้อความคำแนะนำ */}
+      <motion.div
+        key={status}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="absolute top-[calc(50%+230px)] w-full text-center z-20"
+      >
+        <p
+          className="px-6 py-3 rounded-full inline-block backdrop-blur-md"
+          style={{
+            background: "rgba(255,255,255,0.1)",
+            border: "1px solid rgba(255,255,255,0.2)",
+            color: "#67B5FF",
+          }}
+        >
+          {status}
+        </p>
+      </motion.div>
+
+      {/* Progress Bar */}
       {isAnalyzing && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
