@@ -24,7 +24,7 @@ const API_BASE =
   "https://aishincarebackend-production.up.railway.app";
 
 /* =============================================
-   Face Wireframe Overlay (เหมือน GlowbieBell)
+   โครงหน้า (GlowbieBell style)
 ============================================= */
 function FaceWireframeOverlay() {
   return (
@@ -33,121 +33,134 @@ function FaceWireframeOverlay() {
       className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[440px] pointer-events-none"
     >
       <defs>
+        {/* เอฟเฟกต์เรืองแสง */}
         <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="3.5" result="blur" />
+          <feGaussianBlur stdDeviation="3" result="blur" />
           <feMerge>
             <feMergeNode in="blur" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
+
+        {/* ไล่สีจุด */}
         <radialGradient id="dotGrad" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#fff" />
-          <stop offset="100%" stopColor="#ff8acb" />
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="100%" stopColor="#ff8ccf" />
         </radialGradient>
       </defs>
 
-      {/* กรอบโครงหน้า */}
+      {/* === กรอบโครงหน้า === */}
       <path
-        d="M60 170
-           L75 210  90 240  108 270  125 300  140 325
-           L160 340
-           L180 325  195 300  212 270  230 240  245 210
-           L260 170
-           C255 130 215 80 160 70
+        d="M60 170 L75 210 90 240 108 270 125 300 140 325 
+           L160 340 L180 325 195 300 212 270 230 240 245 210 L260 170 
+           C255 130 215 80 160 70 
            C105 80 65 130 60 170 Z"
-        stroke="#ff94c6"
-        strokeWidth="1.8"
+        stroke="#ff9bcf"
+        strokeWidth="1.6"
         fill="none"
         filter="url(#glow)"
       />
 
-      {/* โครงคิ้ว */}
+      {/* === คิ้ว === */}
       <path
         d="M90 150 C115 130,135 130,155 150"
-        stroke="#ffb0d4"
+        stroke="#ffc1e0"
         strokeWidth="1.4"
-        filter="url(#glow)"
         fill="none"
+        filter="url(#glow)"
       />
       <path
         d="M165 150 C185 130,205 130,230 150"
-        stroke="#ffb0d4"
+        stroke="#ffc1e0"
         strokeWidth="1.4"
-        filter="url(#glow)"
         fill="none"
+        filter="url(#glow)"
       />
 
-      {/* โครงตา */}
+      {/* === ดวงตา === */}
       <path
         d="M105 175 C120 168,135 168,145 175 C135 182,120 182,105 175 Z"
-        stroke="#ffcce5"
+        stroke="#ffd0e8"
         strokeWidth="1.2"
         fill="none"
         filter="url(#glow)"
       />
       <path
         d="M175 175 C190 168,205 168,220 175 C205 182,190 182,175 175 Z"
-        stroke="#ffcce5"
+        stroke="#ffd0e8"
         strokeWidth="1.2"
         fill="none"
         filter="url(#glow)"
       />
 
-      {/* จมูก */}
+      {/* === จมูก === */}
       <path
-        d="M160 150 L160 180 L160 210"
-        stroke="#ffacd8"
+        d="M160 150 L160 210"
+        stroke="#ffb6db"
         strokeWidth="1.3"
-        filter="url(#glow)"
         fill="none"
+        filter="url(#glow)"
       />
       <path
         d="M145 220 C155 225,165 225,175 220"
-        stroke="#ffcce5"
+        stroke="#ffd5eb"
         strokeWidth="1.2"
-        filter="url(#glow)"
         fill="none"
+        filter="url(#glow)"
       />
 
-      {/* ปาก */}
+      {/* === ปาก === */}
       <path
         d="M125 265 C145 280,175 280,195 265"
-        stroke="#ffa7d3"
+        stroke="#ffa5d4"
         strokeWidth="1.5"
-        filter="url(#glow)"
         fill="none"
+        filter="url(#glow)"
       />
       <path
         d="M130 260 C150 270,170 270,190 260"
-        stroke="#ffd0e5"
+        stroke="#ffd2e6"
         strokeWidth="1.2"
-        filter="url(#glow)"
         fill="none"
+        filter="url(#glow)"
       />
 
-      {/* คาง */}
+      {/* === คาง === */}
       <path
         d="M140 320 C150 330,170 330,180 320"
         stroke="#ff9bd1"
         strokeWidth="1.4"
-        filter="url(#glow)"
         fill="none"
+        filter="url(#glow)"
       />
 
-      {/* จุด (landmarks) */}
+      {/* === จุด (landmarks) === */}
       {[
-        [60,170],[260,170],[160,70],
-        [105,175],[220,175],
-        [160,210],[125,265],[195,265],[160,340]
-      ].map(([x,y],i)=>(
-        <circle key={i} cx={x} cy={y} r="2.5" fill="url(#dotGrad)" filter="url(#glow)" />
+        [60, 170],
+        [260, 170],
+        [160, 70],
+        [105, 175],
+        [220, 175],
+        [160, 210],
+        [125, 265],
+        [195, 265],
+        [160, 340],
+      ].map(([x, y], i) => (
+        <circle
+          key={i}
+          cx={x}
+          cy={y}
+          r="2.5"
+          fill="url(#dotGrad)"
+          filter="url(#glow)"
+        />
       ))}
     </svg>
   );
 }
 
 /* =============================================
-   Stepper UI
+   Step Indicator
 ============================================= */
 function StepIndicator({ step }: { step: Step }) {
   const labels = ["หน้าตรง", "หันซ้าย", "หันขวา"];
@@ -194,6 +207,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
   const startStableTime = useRef<number | null>(null);
   const stepLocked = useRef(false);
 
+  // 🔹 เริ่มต้น FaceMesh และกล้อง
   useEffect(() => {
     soundRef.current = new Audio("/capture.mp3");
 
@@ -218,7 +232,15 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
     setStatus("🧭 วางหน้าให้อยู่ในกรอบกลางหน้าจอ");
   }, []);
 
-  /* -------------------- mock step change / capture -------------------- */
+  // 🔹 จำลองการคงนิ่งของหน้า
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setStablePercent((p) => (p < 100 ? p + 5 : 100));
+    }, 150);
+    return () => clearInterval(timer);
+  }, []);
+
+  // 🔹 เมื่อคงนิ่งครบ 100% → ถ่ายภาพ
   useEffect(() => {
     if (stablePercent >= 100 && !stepLocked.current) {
       stepLocked.current = true;
@@ -237,15 +259,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
     }
   }, [stablePercent]);
 
-  /* -------------------- จำลองความนิ่ง -------------------- */
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setStablePercent((p) => (p < 100 ? p + 5 : 100));
-    }, 150);
-    return () => clearInterval(timer);
-  }, []);
-
-  /* -------------------- ถ่ายรูป -------------------- */
+  // 🔹 ฟังก์ชันถ่ายภาพ
   function captureThumb() {
     const v = videoRef.current!;
     if (!v) return;
@@ -259,7 +273,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
     setThumbs((t) => [...t, c.toDataURL("image/jpeg")]);
   }
 
-  /* -------------------- วิเคราะห์ -------------------- */
+  // 🔹 ฟังก์ชันวิเคราะห์ภาพ
   async function startAnalyze() {
     setIsAnalyzing(true);
     const blobs = await Promise.all(
@@ -321,7 +335,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         transition={{ duration: 1.8, repeat: Infinity }}
       />
 
-      {/* สถานะ */}
+      {/* 🔹 สถานะข้อความ */}
       <motion.div
         className="absolute top-20 w-full text-center z-30 px-4"
         initial={{ opacity: 0 }}
@@ -332,7 +346,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         </div>
       </motion.div>
 
-      {/* แถบ stable progress */}
+      {/* 🔹 แถบความนิ่ง */}
       {!isAnalyzing && stablePercent > 0 && (
         <div className="absolute bottom-24 w-full flex justify-center z-30">
           <div className="w-2/3">
@@ -341,7 +355,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         </div>
       )}
 
-      {/* overlay ตอนวิเคราะห์ */}
+      {/* 🔹 หน้าจอโหลดตอนวิเคราะห์ */}
       <AnimatePresence>
         {isAnalyzing && (
           <motion.div
@@ -359,7 +373,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         )}
       </AnimatePresence>
 
-      {/* รูปถ่ายแต่ละมุม */}
+      {/* 🔹 แสดงภาพที่ถ่ายครบทั้งสามมุม */}
       <div className="absolute bottom-8 w-full flex justify-center gap-4 z-30">
         {thumbs.map((img, i) => (
           <img
