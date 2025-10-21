@@ -30,9 +30,9 @@
             "@radix-ui/react-toggle-group": "^1.1.2",
             "@radix-ui/react-tooltip": "^1.1.8",
             "@vladmandic/face-api": "^1.7.15",
-            "@mediapipe/face_mesh": "^0.4.1646424915",
-            "@mediapipe/drawing_utils": "^0.3.1675466862",
-            "@mediapipe/camera_utils": "^0.3.1675466862",
+            "@mediapipe/face_mesh": "^0.4.1633559619",
+            "@mediapipe/drawing_utils": "^0.3.1620248257",
+            "@mediapipe/camera_utils": "^0.3.1620248257",
             "class-variance-authority": "^0.7.1",
             "clsx": "*",
             "cmdk": "^1.1.1",
@@ -58,6 +58,7 @@
       },
       "scripts": {
             "dev": "vite",
-            "build": "vite build"
+            "build": "vite build",
+            "preview": "vite preview"
       }
 }
