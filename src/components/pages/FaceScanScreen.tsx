@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { X, HelpCircle } from "lucide-react";
 import { Progress } from "../ui/progress";
 import { FaceMesh } from "@mediapipe/face_mesh";
 import { Camera } from "@mediapipe/camera_utils";
-const faceGuideImage = "/face_mask_scan.png";
 
+const faceGuideImage = "/face_mask_scan.png";
 
 /* =============================================
    CONFIG
@@ -30,17 +30,18 @@ const API_BASE =
   "https://aishincarebackend-production.up.railway.app";
 
 /* =============================================
-   FACE OVERLAY (จาก Figma style)
+   FACE OVERLAY (Figma Style)
 ============================================= */
 function FaceGuideOverlay({ isAnalyzing }: { isAnalyzing: boolean }) {
   return (
     <div className="absolute inset-0 flex justify-center items-center pointer-events-none z-10">
+      {/* glow background */}
       <motion.div
         className="absolute rounded-3xl"
         animate={{
           background: [
-            "radial-gradient(ellipse at center, rgba(255, 138, 212, 0.3), rgba(103, 181, 255, 0.2))",
-            "radial-gradient(ellipse at center, rgba(103, 181, 255, 0.3), rgba(255, 138, 212, 0.2))",
+            "radial-gradient(ellipse at center, rgba(255,138,212,0.3), rgba(103,181,255,0.2))",
+            "radial-gradient(ellipse at center, rgba(103,181,255,0.3), rgba(255,138,212,0.2))",
           ],
           filter: ["blur(30px)", "blur(40px)", "blur(30px)"],
         }}
@@ -49,11 +50,14 @@ function FaceGuideOverlay({ isAnalyzing }: { isAnalyzing: boolean }) {
       />
 
       <div className="relative w-[280px] h-[340px] flex justify-center items-center">
+        {/* mask image */}
         <img
           src={faceGuideImage}
           alt="face guide"
-          className="w-full h-full object-contain opacity-80 drop-shadow-[0_0_20px_rgba(255,138,212,0.4)]"
+          className="w-full h-full object-contain opacity-85 drop-shadow-[0_0_25px_rgba(255,138,212,0.6)]"
         />
+
+        {/* scanning line */}
         {isAnalyzing && (
           <motion.div
             className="absolute left-0 right-0 h-1"
@@ -107,7 +111,6 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
   const [step, setStep] = useState<Step>(0);
   const [thumbs, setThumbs] = useState<string[]>([]);
   const [status, setStatus] = useState("📷 กำลังเปิดกล้อง...");
-  const [isDetected, setIsDetected] = useState(false);
   const [stablePercent, setStablePercent] = useState(0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -144,13 +147,11 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
 
     faceMesh.onResults((results: any) => {
       if (!results.multiFaceLandmarks?.length) {
-        setIsDetected(false);
         setStatus("📍 ขยับหน้าให้อยู่กลางกรอบ");
         setStablePercent(0);
         holdStart.current = null;
         return;
       }
-      setIsDetected(true);
 
       const { yaw, roll, nose } = estimatePose(results.multiFaceLandmarks[0]);
       const s = stepRef.current;
@@ -239,41 +240,21 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
   return (
     <div
       className="min-h-screen relative overflow-hidden text-white"
-      style={{ background: "linear-gradient(180deg, #0A0F1C, #111827)" }}
+      style={{
+        background: "linear-gradient(180deg, #090E22 0%, #1A1F3C 100%)",
+      }}
     >
       {/* ปุ่มปิด */}
       <motion.button
         onClick={onBack}
         className="absolute top-6 left-6 z-20 w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md"
         style={{
-          background: "rgba(0, 0, 0, 0.3)",
+          background: "rgba(0,0,0,0.3)",
           border: "1px solid rgba(255,255,255,0.1)",
         }}
       >
         <X className="w-6 h-6 text-white" />
       </motion.button>
-
-      {/* Badge ด้านบน */}
-      <div className="absolute top-20 left-0 right-0 flex justify-center gap-3 z-20">
-        <div
-          className="px-6 py-3 rounded-full inline-flex items-center gap-2 backdrop-blur-md"
-          style={{
-            background:
-              "linear-gradient(135deg, rgba(34,197,94,0.9), rgba(16,185,129,0.9))",
-          }}
-        >
-          <span className="text-white">🟢 ตรวจพบใบหน้าแล้ว</span>
-        </div>
-        <div
-          className="px-6 py-3 rounded-full inline-flex items-center gap-2 backdrop-blur-md"
-          style={{
-            background: "rgba(0,0,0,0.4)",
-            border: "1px solid rgba(255,255,255,0.2)",
-          }}
-        >
-          <span className="text-white">💡 แสงเหมาะสม</span>
-        </div>
-      </div>
 
       {/* กล้อง */}
       <video
@@ -284,15 +265,15 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         playsInline
       />
 
-      {/* Overlay Figma-style */}
+      {/* Overlay โครงหน้า */}
       <FaceGuideOverlay isAnalyzing={isAnalyzing} />
 
-      {/* ข้อความสถานะ */}
+      {/* คำแนะนำ */}
       <motion.div
         key={status}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="absolute bottom-40 w-full text-center z-20"
+        className="absolute top-[calc(50%+230px)] w-full text-center z-20"
       >
         <p
           className="px-6 py-3 rounded-full inline-block backdrop-blur-md"
@@ -311,7 +292,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="absolute bottom-24 left-0 right-0 px-10 z-20"
+          className="absolute bottom-28 left-0 right-0 px-10 z-20"
         >
           <div
             className="rounded-3xl p-6 backdrop-blur-md"
@@ -332,21 +313,25 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         </motion.div>
       )}
 
-      {/* ภาพแต่ละมุม */}
-      <div className="absolute bottom-6 w-full flex justify-center gap-4 z-20">
-        {thumbs.map((img, i) => (
-          <img
-            key={i}
-            src={img}
-            className="w-20 h-20 object-cover rounded-full border-2 border-pink-400 shadow-lg"
-          />
-        ))}
-      </div>
+      {/* ปุ่มเริ่มวิเคราะห์ */}
+      {!isAnalyzing && (
+        <motion.button
+          onClick={() => setStep(0)}
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 px-10 py-4 rounded-2xl text-white font-semibold backdrop-blur-md"
+          style={{
+            background:
+              "linear-gradient(135deg, #FF8AD4 0%, #67B5FF 50%, #C19BFF 100%)",
+            boxShadow: "0 10px 40px rgba(103,181,255,0.4)",
+          }}
+        >
+          🔍 เริ่มวิเคราะห์ผิว
+        </motion.button>
+      )}
 
       {/* ปุ่มช่วยเหลือ */}
       <motion.button
         whileHover={{ scale: 1.1 }}
-        className="absolute bottom-6 left-6 w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md"
+        className="absolute bottom-10 left-6 w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md"
         style={{
           background: "rgba(0,0,0,0.3)",
           border: "1px solid rgba(255,255,255,0.2)",
