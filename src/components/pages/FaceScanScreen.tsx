@@ -15,7 +15,6 @@ interface FaceScanScreenProps {
 
 const STEPS = ["หน้าตรง", "หันซ้าย", "หันขวา"] as const;
 type Step = 0 | 1 | 2;
-
 const STABLE_TIME = 2000;
 const NEXT_DELAY = 1000;
 const TARGET_YAW = [0, +22, -22];
@@ -38,7 +37,6 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [stablePercent, setStablePercent] = useState(0);
-
   const holdStart = useRef<number | null>(null);
   const stepRef = useRef<Step>(0);
   const stepLocked = useRef(false);
@@ -171,68 +169,59 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
   }
 
   /* =============================================
-     UI เหมือน Figma
+     UI Figma Style
   ============================================== */
   return (
-    <div className="relative flex flex-col items-center justify-center min-h-screen overflow-hidden bg-gradient-to-b from-[#070B13] to-[#111827] text-white">
+    <div className="relative flex flex-col items-center justify-center min-h-screen overflow-hidden text-white bg-gradient-to-b from-[#0A0F1C] to-[#111827]">
 
-      {/* กล้องแทนโครงหน้า */}
+      {/* กล้อง */}
       <video
         ref={videoRef}
-        className="absolute inset-0 w-full h-full object-cover transform -scale-x-100 opacity-90"
+        className="absolute inset-0 w-full h-full object-cover transform -scale-x-100 opacity-95"
         autoPlay
         muted
         playsInline
       />
 
-      {/* กรอบ Figma Glow */}
-      <motion.div
-        className="relative w-[300px] h-[380px] rounded-3xl overflow-hidden flex items-center justify-center z-10"
-        animate={{
-          boxShadow: [
-            "0 0 40px rgba(103,181,255,0.6)",
-            "0 0 60px rgba(255,138,212,0.6)",
-            "0 0 40px rgba(103,181,255,0.6)",
-          ],
-        }}
-        transition={{ duration: 4, repeat: Infinity }}
-      >
-        <div className="absolute inset-0 rounded-3xl border border-white/10 backdrop-blur-sm" />
+      {/* Overlay กรอบกลมเรืองแสง */}
+      <div className="relative w-[320px] h-[400px] z-20 flex items-center justify-center">
+        <div className="absolute w-[280px] h-[280px] rounded-full border border-white/20" />
         <motion.div
-          className="absolute inset-0"
+          className="absolute w-[280px] h-[280px] rounded-full"
           animate={{
-            background: [
-              "radial-gradient(circle at center, rgba(255,138,212,0.2), transparent 70%)",
-              "radial-gradient(circle at center, rgba(103,181,255,0.2), transparent 70%)",
+            boxShadow: [
+              "0 0 30px 10px rgba(103,181,255,0.4)",
+              "0 0 50px 15px rgba(255,138,212,0.4)",
+              "0 0 30px 10px rgba(103,181,255,0.4)",
             ],
           }}
-          transition={{ duration: 3, repeat: Infinity }}
+          transition={{ duration: 4, repeat: Infinity }}
         />
-      </motion.div>
+      </div>
 
-      {/* สถานะการสแกน */}
+      {/* ข้อความคำแนะนำ */}
       <motion.div
         key={status}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="absolute top-[calc(50%+240px)] text-center z-20"
+        className="absolute top-[calc(50%+240px)] text-center z-30"
       >
         <p className="px-6 py-2 rounded-full bg-white/10 border border-white/20 text-[#67B5FF] backdrop-blur-sm">
           {status}
         </p>
       </motion.div>
 
-      {/* ปุ่ม “เริ่มวิเคราะห์ผิว” เหมือนใน Figma */}
+      {/* ปุ่มเริ่มวิเคราะห์ */}
       {!isAnalyzing && (
         <motion.button
           whileHover={{ scale: 1.05 }}
-          className="absolute bottom-16 px-8 py-4 rounded-3xl bg-gradient-to-r from-pink-400 to-blue-400 font-semibold text-white shadow-lg z-20"
+          className="absolute bottom-16 px-10 py-4 rounded-full bg-gradient-to-r from-pink-400 to-blue-400 text-white font-semibold shadow-lg"
         >
           🔍 เริ่มวิเคราะห์ผิว
         </motion.button>
       )}
 
-      {/* Progress ตอนวิเคราะห์ */}
+      {/* Progress */}
       {isAnalyzing && (
         <motion.div
           className="absolute bottom-20 w-[85%] max-w-md px-6 py-5 rounded-3xl bg-black/60 border border-white/10 backdrop-blur-md z-30"
@@ -248,7 +237,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         </motion.div>
       )}
 
-      {/* ปุ่มกลับ & ช่วยเหลือ */}
+      {/* ปุ่ม Back / Help */}
       <div className="absolute top-6 left-6 z-30">
         <button
           onClick={onBack}
