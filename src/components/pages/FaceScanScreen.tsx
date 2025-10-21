@@ -16,7 +16,7 @@ interface FaceScanScreenProps {
 const STEPS = ["หน้าตรง", "หันซ้าย", "หันขวา"] as const;
 type Step = 0 | 1 | 2;
 
-const STABLE_TIME = 2000; // อยู่ในมุมที่ถูกต้อง 2 วิ
+const STABLE_TIME = 2000;
 const NEXT_DELAY = 900;
 const TARGET_YAW = [0, +22, -22];
 const YAW_TOL = [10, 12, 12];
@@ -28,60 +28,51 @@ const API_BASE =
   "https://aishincarebackend-production.up.railway.app";
 
 /* =============================================
-   Scan Overlay (กรอบ + เส้นเลเซอร์)
+   Pastel Face Scan Overlay (วงรีเรืองแสง + เส้นสแกน)
 ============================================= */
-function ScanOverlay() {
+function PastelScanOverlay() {
   return (
     <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
-      <svg
-        viewBox="0 0 320 440"
-        className="w-[340px] h-[440px] drop-shadow-[0_0_25px_rgba(0,255,255,0.4)]"
-      >
-        <defs>
-          <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#00e5ff" />
-            <stop offset="100%" stopColor="#3f9cff" />
-          </linearGradient>
-        </defs>
-
-        {/* กรอบโค้งมน */}
-        <rect
-          x="20"
-          y="20"
-          width="280"
-          height="400"
-          rx="80"
-          ry="80"
-          stroke="url(#grad)"
-          strokeWidth="3"
-          fill="none"
-        />
-        {/* มุมเน้น 4 ด้าน */}
-        <path
-          d="M40 20 v40 M20 40 h40 M280 20 v40 M300 40 h-40 M40 420 v-40 M20 400 h40 M280 420 v-40 M300 400 h-40"
-          stroke="#00eaff"
-          strokeWidth="3"
-          strokeLinecap="round"
-        />
-      </svg>
-
-      {/* เส้นเลเซอร์วิ่งขึ้น-ลง */}
+      {/* วงรีกรอบเรืองแสง */}
       <motion.div
-        className="absolute w-[300px] h-[3px] bg-gradient-to-r from-cyan-400 via-blue-200 to-cyan-400 rounded-full blur-[1px]"
-        initial={{ y: -180 }}
-        animate={{ y: [180, -180] }}
-        transition={{
-          duration: 2.8,
-          repeat: Infinity,
-          ease: "easeInOut",
+        className="absolute rounded-[140px] border-[3px] border-transparent"
+        style={{
+          width: 300,
+          height: 400,
+          background:
+            "linear-gradient(180deg, rgba(255,192,243,0.8) 0%, rgba(195,156,255,0.8) 100%)",
+          WebkitMask:
+            "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+          WebkitMaskComposite: "xor",
+          maskComposite: "exclude",
         }}
+        animate={{
+          boxShadow: [
+            "0 0 0px rgba(255,150,200,0.4)",
+            "0 0 25px rgba(255,180,240,0.8)",
+            "0 0 0px rgba(255,150,200,0.4)",
+          ],
+        }}
+        transition={{ duration: 2.5, repeat: Infinity }}
+      />
+
+      {/* เส้น pulse วิ่งขึ้นลง */}
+      <motion.div
+        className="absolute w-[260px] h-[4px] rounded-full blur-[2px]"
+        style={{
+          background:
+            "linear-gradient(90deg, rgba(255,180,230,0.8), rgba(200,160,255,0.8))",
+        }}
+        initial={{ y: -160 }}
+        animate={{ y: [160, -160] }}
+        transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
       />
     </div>
   );
 }
 
 /* =============================================
-   Step Indicator
+   Step Indicator (โทนชมพู)
 ============================================= */
 function StepIndicator({ step }: { step: Step }) {
   const labels = ["หน้าตรง", "หันซ้าย", "หันขวา"];
@@ -92,19 +83,21 @@ function StepIndicator({ step }: { step: Step }) {
         return (
           <div key={i} className="flex items-center gap-3">
             <div
-              className={`w-14 h-14 rounded-full grid place-items-center border-2 ${
-                active ? "border-cyan-400 bg-cyan-400/10" : "border-white/30"
+              className={`w-14 h-14 rounded-full grid place-items-center border-[2.5px] ${
+                active
+                  ? "border-pink-400 bg-pink-200/10"
+                  : "border-pink-200/40"
               }`}
             >
               <span
-                className={`text-[11px] font-semibold ${
-                  active ? "text-cyan-200" : "text-white/70"
+                className={`text-[11px] font-medium ${
+                  active ? "text-pink-400" : "text-gray-400"
                 }`}
               >
                 {lb}
               </span>
             </div>
-            {i < 2 && <ArrowRight className="w-4 h-4 text-white/60" />}
+            {i < 2 && <ArrowRight className="w-4 h-4 text-pink-300" />}
           </div>
         );
       })}
@@ -144,11 +137,10 @@ function isCentered(nose: any) {
 }
 
 /* =============================================
-   FaceScanScreen
+   FaceScanScreen (Pastel GlowbieBell style)
 ============================================= */
 export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-
   const [step, setStep] = useState<Step>(0);
   const stepRef = useRef<Step>(0);
   useEffect(() => {
@@ -164,10 +156,8 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
   const soundRef = useRef<HTMLAudioElement | null>(null);
   const stepLocked = useRef(false);
   const holdStart = useRef<number | null>(null);
-  const faceMeshRef = useRef<FaceMesh | null>(null);
-  const camStopRef = useRef<() => void>(() => {});
 
-  /* ---------- เปิดกล้อง + FaceMesh ---------- */
+  /* ---------- เริ่มต้น FaceMesh ---------- */
   useEffect(() => {
     soundRef.current = new Audio("/capture.mp3");
 
@@ -181,20 +171,28 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
       minTrackingConfidence: 0.6,
     });
 
+    const v = videoRef.current!;
+    const cam = new Camera(v, {
+      onFrame: async () => {
+        await faceMesh.send({ image: v });
+      },
+      width: 640,
+      height: 480,
+    });
+
     faceMesh.onResults((results: any) => {
-      if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+      if (!results.multiFaceLandmarks?.length) {
+        setStatus("📍 ขยับหน้าให้อยู่กลางกรอบ");
         holdStart.current = null;
         setStablePercent(0);
-        setStatus("📍 วางหน้าให้อยู่ในกรอบกลางหน้าจอ");
         return;
       }
 
-      const landmarks = results.multiFaceLandmarks[0];
-      const { yaw, roll, nose } = estimatePose(landmarks);
-
+      const { yaw, roll, nose } = estimatePose(results.multiFaceLandmarks[0]);
       const s = stepRef.current;
       const target = TARGET_YAW[s];
       const tol = YAW_TOL[s];
+
       const yawOk = Math.abs(yaw - target) <= tol;
       const rollOk = Math.abs(roll) <= MAX_ROLL;
       const centerOk = isCentered(nose);
@@ -205,43 +203,25 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         if (s === 0) setStatus("➡️ หันหน้าให้นิ่งตรงกล้อง");
         else if (s === 1) setStatus("⬅️ หันไปทางซ้ายเล็กน้อย");
         else setStatus("➡️ หันไปทางขวาเล็กน้อย");
-      } else {
-        setStatus(`✅ มุมถูกต้อง: ${STEPS[s]} — อยู่นิ่ง ๆ`);
-      }
+      } else setStatus(`✅ มุมถูกต้อง: ${STEPS[s]} — อยู่นิ่ง ๆ`);
 
       const inTarget = yawOk && rollOk && centerOk;
       const now = performance.now();
       if (inTarget) {
-        if (holdStart.current == null) holdStart.current = now;
-        const elapsed = now - (holdStart.current ?? now);
-        const pct = Math.min(100, Math.round((elapsed / STABLE_TIME) * 100));
-        setStablePercent(pct);
+        if (!holdStart.current) holdStart.current = now;
+        const pct = Math.min(100, ((now - holdStart.current) / STABLE_TIME) * 100);
+        setStablePercent(Math.round(pct));
       } else {
         holdStart.current = null;
         setStablePercent(0);
       }
     });
 
-    faceMeshRef.current = faceMesh;
-    const v = videoRef.current!;
-    const cam = new Camera(v, {
-      onFrame: async () => {
-        await faceMesh.send({ image: v });
-      },
-      width: 640,
-      height: 480,
-    });
     cam.start();
-    camStopRef.current = () => cam.stop();
-    setStatus("🧭 วางหน้าให้อยู่ในกรอบกลางหน้าจอ");
-
-    return () => {
-      camStopRef.current?.();
-      faceMeshRef.current = null;
-    };
+    return () => cam.stop();
   }, []);
 
-  /* ---------- เมื่ออยู่ครบเวลา ---------- */
+  /* ---------- ถ่ายภาพเมื่อครบ ---------- */
   useEffect(() => {
     if (stablePercent >= 100 && !stepLocked.current) {
       stepLocked.current = true;
@@ -255,17 +235,16 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
           setStablePercent(0);
           stepLocked.current = false;
         } else {
-          setStatus("🎉 ครบทั้ง 3 มุมแล้ว! เริ่มวิเคราะห์ผิว...");
+          setStatus("✨ ครบทั้ง 3 มุมแล้ว! เริ่มวิเคราะห์ผิว...");
           startAnalyze();
         }
       }, NEXT_DELAY);
     }
   }, [stablePercent]);
 
-  /* ---------- ถ่ายรูป ---------- */
+  /* ---------- ถ่ายภาพ ---------- */
   function captureThumb() {
     const v = videoRef.current!;
-    if (!v) return;
     const c = document.createElement("canvas");
     c.width = v.videoWidth;
     c.height = v.videoHeight;
@@ -282,6 +261,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
     const blobs = await Promise.all(thumbs.map((t) => fetch(t).then((r) => r.blob())));
     const form = new FormData();
     blobs.forEach((b, i) => form.append("files", b, `angle_${i}.jpg`));
+
     const res = await fetch(`${API_BASE}/analyze/skin`, { method: "POST", body: form });
     const data = await res.json();
 
@@ -298,26 +278,26 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
 
   /* ---------- UI ---------- */
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#031019] to-[#0A2233] relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-[#fff7fb] to-[#fff0f8] relative overflow-hidden">
       <button
         onClick={onBack}
-        className="absolute top-6 left-6 z-40 w-10 h-10 bg-black/30 rounded-full flex items-center justify-center"
+        className="absolute top-6 left-6 z-40 w-10 h-10 bg-white/40 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm"
       >
-        <X className="w-6 h-6 text-white" />
+        <X className="w-6 h-6 text-pink-400" />
       </button>
 
       <StepIndicator step={step} />
 
       <video
         ref={videoRef}
-        className="absolute inset-0 w-full h-full object-cover transform -scale-x-100"
+        className="absolute inset-0 w-full h-full object-cover transform -scale-x-100 rounded-[30px]"
         autoPlay
         muted
         playsInline
       />
 
-      {/* กรอบสแกน + เลเซอร์ */}
-      <ScanOverlay />
+      {/* Pastel Scan Overlay */}
+      <PastelScanOverlay />
 
       {/* สถานะ */}
       <motion.div
@@ -325,7 +305,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
-        <div className="bg-black/60 text-cyan-100 px-5 py-3 rounded-2xl inline-block text-lg font-medium">
+        <div className="bg-white/60 backdrop-blur-md text-pink-500 px-5 py-3 rounded-2xl inline-block text-lg font-medium shadow">
           {status}
         </div>
       </motion.div>
@@ -334,7 +314,10 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
       {!isAnalyzing && (
         <div className="absolute bottom-24 w-full flex justify-center z-30">
           <div className="w-2/3">
-            <Progress value={stablePercent} className="h-2" />
+            <Progress
+              value={stablePercent}
+              className="h-3 bg-pink-100 [&>div]:bg-gradient-to-r [&>div]:from-pink-300 [&>div]:to-purple-300"
+            />
           </div>
         </div>
       )}
@@ -343,16 +326,19 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
       <AnimatePresence>
         {isAnalyzing && (
           <motion.div
-            className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-40"
+            className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 backdrop-blur-md z-40"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <div className="text-white mb-6 text-xl font-semibold">
-              🔬 กำลังวิเคราะห์ผิวของคุณ...
+            <div className="text-pink-500 mb-6 text-xl font-semibold">
+              ✨ กำลังวิเคราะห์ผิวของคุณ...
             </div>
-            <Progress value={progress} className="h-3 w-3/4 mb-3" />
-            <div className="text-cyan-300 text-lg">{progress}%</div>
+            <Progress
+              value={progress}
+              className="h-3 w-3/4 mb-3 bg-pink-100 [&>div]:bg-gradient-to-r [&>div]:from-pink-300 [&>div]:to-purple-300"
+            />
+            <div className="text-pink-400 text-lg">{progress}%</div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -363,7 +349,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
           <img
             key={i}
             src={img}
-            className="w-20 h-20 object-cover rounded-full border-2 border-cyan-400 shadow-md"
+            className="w-20 h-20 object-cover rounded-full border-2 border-pink-300 shadow-md"
           />
         ))}
       </div>
