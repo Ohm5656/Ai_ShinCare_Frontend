@@ -5,7 +5,7 @@ import { Progress } from "../ui/progress";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { FaceMesh } from "@mediapipe/face_mesh";
 import { Camera } from "@mediapipe/camera_utils";
-const faceGuideImage = "public/face_mask_scan.png";
+const faceGuideImage = "/face_mask_scan.png";
 
 
 /* =============================================
