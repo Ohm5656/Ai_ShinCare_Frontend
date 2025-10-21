@@ -28,51 +28,57 @@ const API_BASE =
   "https://aishincarebackend-production.up.railway.app";
 
 /* =============================================
-   Pastel Face Scan Overlay (วงรีเรืองแสง + เส้นสแกน)
+   Overlay ใหม่ — วงรี + เส้นสแกนวิ่งขึ้นลง
 ============================================= */
-function PastelScanOverlay() {
+function ScanOverlay({ isDetected }: { isDetected: boolean }) {
   return (
-    <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
-      {/* วงรีกรอบเรืองแสง */}
+    <div className="absolute inset-0 flex justify-center items-center pointer-events-none z-20">
+      {/* วงรีโปร่งเรืองแสง */}
       <motion.div
-        className="absolute rounded-[140px] border-[3px] border-transparent"
+        className="absolute rounded-[140px]"
         style={{
           width: 300,
           height: 400,
+          border: "3px solid transparent",
           background:
-            "linear-gradient(180deg, rgba(255,192,243,0.8) 0%, rgba(195,156,255,0.8) 100%)",
+            "linear-gradient(180deg, rgba(255,160,230,0.7), rgba(160,140,255,0.7))",
           WebkitMask:
             "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
           WebkitMaskComposite: "xor",
           maskComposite: "exclude",
         }}
         animate={{
-          boxShadow: [
-            "0 0 0px rgba(255,150,200,0.4)",
-            "0 0 25px rgba(255,180,240,0.8)",
-            "0 0 0px rgba(255,150,200,0.4)",
-          ],
+          boxShadow: isDetected
+            ? [
+                "0 0 0px rgba(255,150,230,0.3)",
+                "0 0 30px rgba(255,160,255,0.8)",
+                "0 0 0px rgba(255,150,230,0.3)",
+              ]
+            : ["0 0 0px rgba(0,0,0,0)"],
         }}
-        transition={{ duration: 2.5, repeat: Infinity }}
+        transition={{ duration: 2, repeat: Infinity }}
       />
 
-      {/* เส้น pulse วิ่งขึ้นลง */}
+      {/* เส้นสแกนวิ่งขึ้นลง */}
       <motion.div
         className="absolute w-[260px] h-[4px] rounded-full blur-[2px]"
         style={{
           background:
-            "linear-gradient(90deg, rgba(255,180,230,0.8), rgba(200,160,255,0.8))",
+            "linear-gradient(90deg, transparent, rgba(255,180,230,0.9), rgba(180,160,255,0.9), transparent)",
         }}
-        initial={{ y: -160 }}
-        animate={{ y: [160, -160] }}
-        transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+        animate={{ y: [180, -180] }}
+        transition={{
+          duration: 2.8,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
       />
     </div>
   );
 }
 
 /* =============================================
-   Step Indicator (โทนชมพู)
+   Step Indicator (ด้านบน)
 ============================================= */
 function StepIndicator({ step }: { step: Step }) {
   const labels = ["หน้าตรง", "หันซ้าย", "หันขวา"];
@@ -137,30 +143,29 @@ function isCentered(nose: any) {
 }
 
 /* =============================================
-   FaceScanScreen (Pastel GlowbieBell style)
+   MAIN: FaceScanScreen
 ============================================= */
 export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [step, setStep] = useState<Step>(0);
-  const stepRef = useRef<Step>(0);
-  useEffect(() => {
-    stepRef.current = step;
-  }, [step]);
-
   const [thumbs, setThumbs] = useState<string[]>([]);
   const [status, setStatus] = useState("📷 กำลังเปิดกล้อง...");
   const [progress, setProgress] = useState(0);
   const [stablePercent, setStablePercent] = useState(0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isDetected, setIsDetected] = useState(false);
 
   const soundRef = useRef<HTMLAudioElement | null>(null);
   const stepLocked = useRef(false);
   const holdStart = useRef<number | null>(null);
+  const stepRef = useRef<Step>(0);
+  useEffect(() => {
+    stepRef.current = step;
+  }, [step]);
 
-  /* ---------- เริ่มต้น FaceMesh ---------- */
+  /* ---------- เปิด Mediapipe FaceMesh ---------- */
   useEffect(() => {
     soundRef.current = new Audio("/capture.mp3");
-
     const faceMesh = new FaceMesh({
       locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`,
     });
@@ -173,20 +178,20 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
 
     const v = videoRef.current!;
     const cam = new Camera(v, {
-      onFrame: async () => {
-        await faceMesh.send({ image: v });
-      },
+      onFrame: async () => await faceMesh.send({ image: v }),
       width: 640,
       height: 480,
     });
 
     faceMesh.onResults((results: any) => {
       if (!results.multiFaceLandmarks?.length) {
+        setIsDetected(false);
         setStatus("📍 ขยับหน้าให้อยู่กลางกรอบ");
         holdStart.current = null;
         setStablePercent(0);
         return;
       }
+      setIsDetected(true);
 
       const { yaw, roll, nose } = estimatePose(results.multiFaceLandmarks[0]);
       const s = stepRef.current;
@@ -221,7 +226,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
     return () => cam.stop();
   }, []);
 
-  /* ---------- ถ่ายภาพเมื่อครบ ---------- */
+  /* ---------- เมื่อครบเวลา ---------- */
   useEffect(() => {
     if (stablePercent >= 100 && !stepLocked.current) {
       stepLocked.current = true;
@@ -242,7 +247,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
     }
   }, [stablePercent]);
 
-  /* ---------- ถ่ายภาพ ---------- */
+  /* ---------- ถ่ายรูป ---------- */
   function captureThumb() {
     const v = videoRef.current!;
     const c = document.createElement("canvas");
@@ -296,8 +301,8 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
         playsInline
       />
 
-      {/* Pastel Scan Overlay */}
-      <PastelScanOverlay />
+      {/* Overlay ใหม่ */}
+      <ScanOverlay isDetected={isDetected} />
 
       {/* สถานะ */}
       <motion.div
