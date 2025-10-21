@@ -5,7 +5,8 @@ import { Progress } from "../ui/progress";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { FaceMesh } from "@mediapipe/face_mesh";
 import { Camera } from "@mediapipe/camera_utils";
-import faceGuideImage from "figma:asset/41e0b8b5ae6166dc73affc46ce436beac2f84b0b.png";
+const faceGuideImage = "public/face_mask_scan.png";
+
 
 /* =============================================
    CONFIG
