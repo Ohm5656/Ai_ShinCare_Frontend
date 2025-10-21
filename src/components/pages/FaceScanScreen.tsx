@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { X, HelpCircle } from "lucide-react";
 import { Progress } from "../ui/progress";
 import { FaceMesh } from "@mediapipe/face_mesh";
@@ -16,8 +16,8 @@ interface FaceScanScreenProps {
 const STEPS = ["หน้าตรง", "หันซ้าย", "หันขวา"] as const;
 type Step = 0 | 1 | 2;
 
-const STABLE_TIME = 2000; // ต้องอยู่นิ่ง 2 วิ
-const NEXT_DELAY = 1000; // ค้างภาพไว้ 1 วิ
+const STABLE_TIME = 2000;
+const NEXT_DELAY = 1000;
 const TARGET_YAW = [0, +22, -22];
 const YAW_TOL = [10, 12, 12];
 const MAX_ROLL = 12;
@@ -32,12 +32,11 @@ const API_BASE =
 ============================================= */
 export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [status, setStatus] = useState("📷 เปิดกล้อง...");
+  const [status, setStatus] = useState("📷 กำลังเปิดกล้อง...");
   const [thumbs, setThumbs] = useState<string[]>([]);
   const [step, setStep] = useState<Step>(0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [stablePercent, setStablePercent] = useState(0);
 
   const holdStart = useRef<number | null>(null);
@@ -45,10 +44,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
   const stepLocked = useRef(false);
   const soundRef = useRef<HTMLAudioElement | null>(null);
 
-  /* ---------- update stepRef ---------- */
-  useEffect(() => {
-    stepRef.current = step;
-  }, [step]);
+  useEffect(() => { stepRef.current = step; }, [step]);
 
   /* ---------- setup Mediapipe ---------- */
   useEffect(() => {
@@ -75,9 +71,7 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
       if (!results.multiFaceLandmarks?.length || isAnalyzing) return;
       const landmarks = results.multiFaceLandmarks[0];
 
-      const LEFT_EYE = 33;
-      const RIGHT_EYE = 263;
-      const NOSE_TIP = 1;
+      const LEFT_EYE = 33, RIGHT_EYE = 263, NOSE_TIP = 1;
       const leftEye = landmarks[LEFT_EYE];
       const rightEye = landmarks[RIGHT_EYE];
       const nose = landmarks[NOSE_TIP];
@@ -126,13 +120,9 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
     if (stablePercent >= 100 && !stepLocked.current) {
       stepLocked.current = true;
       soundRef.current?.play();
-
       const img = captureFrame();
-      setPreviewImage(img);
       setThumbs((t) => [...t, img]);
-
       setTimeout(() => {
-        setPreviewImage(null);
         if (step < 2) {
           setStep((step + 1) as Step);
           setStablePercent(0);
@@ -180,124 +170,99 @@ export function FaceScanScreen({ onAnalyzeResult, onBack }: FaceScanScreenProps)
     }, 100);
   }
 
-  /* ---------- UI ---------- */
+  /* =============================================
+     UI เหมือน Figma
+  ============================================== */
   return (
-    <div
-      className="min-h-screen relative flex flex-col items-center justify-center overflow-hidden text-white"
-      style={{ background: "linear-gradient(180deg, #0A0F1C, #111827)" }}
-    >
-      {/* กล้องจริง */}
+    <div className="relative flex flex-col items-center justify-center min-h-screen overflow-hidden bg-gradient-to-b from-[#070B13] to-[#111827] text-white">
+
+      {/* กล้องแทนโครงหน้า */}
       <video
         ref={videoRef}
-        className="absolute inset-0 w-full h-full object-cover transform -scale-x-100"
+        className="absolute inset-0 w-full h-full object-cover transform -scale-x-100 opacity-90"
         autoPlay
         muted
         playsInline
       />
 
-      {/* ปุ่มปิด */}
-      <motion.button
-        onClick={onBack}
-        className="absolute top-6 left-6 z-30 w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md"
-        style={{
-          background: "rgba(0,0,0,0.3)",
-          border: "1px solid rgba(255,255,255,0.1)",
-        }}
-      >
-        <X className="w-6 h-6 text-white" />
-      </motion.button>
-
-      {/* กรอบ Glow Figma-style */}
+      {/* กรอบ Figma Glow */}
       <motion.div
-        className="relative z-20 flex flex-col items-center justify-center"
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
+        className="relative w-[300px] h-[380px] rounded-3xl overflow-hidden flex items-center justify-center z-10"
+        animate={{
+          boxShadow: [
+            "0 0 40px rgba(103,181,255,0.6)",
+            "0 0 60px rgba(255,138,212,0.6)",
+            "0 0 40px rgba(103,181,255,0.6)",
+          ],
+        }}
+        transition={{ duration: 4, repeat: Infinity }}
       >
-        {/* Glow */}
+        <div className="absolute inset-0 rounded-3xl border border-white/10 backdrop-blur-sm" />
         <motion.div
-          className="absolute rounded-3xl"
+          className="absolute inset-0"
           animate={{
             background: [
-              "radial-gradient(ellipse at center, rgba(255,138,212,0.3), rgba(103,181,255,0.2))",
-              "radial-gradient(ellipse at center, rgba(103,181,255,0.3), rgba(255,138,212,0.2))",
+              "radial-gradient(circle at center, rgba(255,138,212,0.2), transparent 70%)",
+              "radial-gradient(circle at center, rgba(103,181,255,0.2), transparent 70%)",
             ],
-            filter: ["blur(30px)", "blur(40px)", "blur(30px)"],
           }}
-          transition={{ duration: 4, repeat: Infinity }}
-          style={{ width: 280, height: 340 }}
+          transition={{ duration: 3, repeat: Infinity }}
         />
-
-        {/* สายเลเซอร์ */}
-        {isAnalyzing && (
-          <motion.div
-            className="absolute left-0 right-0 h-1"
-            animate={{ top: ["0%", "100%", "0%"] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            style={{
-              background:
-                "linear-gradient(90deg, transparent, rgba(103,181,255,0.9), transparent)",
-              boxShadow: "0 0 10px rgba(103,181,255,0.8)",
-            }}
-          />
-        )}
       </motion.div>
 
-      {/* ข้อความคำแนะนำ */}
+      {/* สถานะการสแกน */}
       <motion.div
         key={status}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="absolute top-[calc(50%+230px)] w-full text-center z-20"
+        className="absolute top-[calc(50%+240px)] text-center z-20"
       >
-        <p
-          className="px-6 py-3 rounded-full inline-block backdrop-blur-md"
-          style={{
-            background: "rgba(255,255,255,0.1)",
-            border: "1px solid rgba(255,255,255,0.2)",
-            color: "#67B5FF",
-          }}
-        >
+        <p className="px-6 py-2 rounded-full bg-white/10 border border-white/20 text-[#67B5FF] backdrop-blur-sm">
           {status}
         </p>
       </motion.div>
 
-      {/* Progress Bar */}
+      {/* ปุ่ม “เริ่มวิเคราะห์ผิว” เหมือนใน Figma */}
+      {!isAnalyzing && (
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          className="absolute bottom-16 px-8 py-4 rounded-3xl bg-gradient-to-r from-pink-400 to-blue-400 font-semibold text-white shadow-lg z-20"
+        >
+          🔍 เริ่มวิเคราะห์ผิว
+        </motion.button>
+      )}
+
+      {/* Progress ตอนวิเคราะห์ */}
       {isAnalyzing && (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="absolute bottom-28 left-0 right-0 px-10 z-20"
+          className="absolute bottom-20 w-[85%] max-w-md px-6 py-5 rounded-3xl bg-black/60 border border-white/10 backdrop-blur-md z-30"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
         >
-          <div
-            className="rounded-3xl p-6 backdrop-blur-md"
-            style={{
-              background: "rgba(0,0,0,0.7)",
-              border: "1px solid rgba(255,255,255,0.1)",
-            }}
-          >
-            <div className="text-center mb-3 text-pink-300">
-              ✨ กำลังวิเคราะห์ผิวของคุณ...
-            </div>
-            <Progress
-              value={progress}
-              className="h-3 bg-gray-800 [&>div]:bg-gradient-to-r [&>div]:from-pink-300 [&>div]:to-purple-400"
-            />
-            <div className="text-center mt-2 text-pink-400">{progress}%</div>
-          </div>
+          <div className="text-center text-pink-300 mb-3">✨ กำลังวิเคราะห์ผิวของคุณ...</div>
+          <Progress
+            value={progress}
+            className="h-3 bg-gray-800 [&>div]:bg-gradient-to-r [&>div]:from-pink-300 [&>div]:to-purple-400"
+          />
+          <div className="text-center text-pink-400 mt-2">{progress}%</div>
         </motion.div>
       )}
 
-      {/* ปุ่มช่วยเหลือ */}
-      <motion.button
-        whileHover={{ scale: 1.1 }}
-        className="absolute bottom-10 left-6 w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md z-30"
-        style={{
-          background: "rgba(0,0,0,0.3)",
-          border: "1px solid rgba(255,255,255,0.2)",
-        }}
-      >
-        <HelpCircle className="w-6 h-6 text-white" />
-      </motion.button>
+      {/* ปุ่มกลับ & ช่วยเหลือ */}
+      <div className="absolute top-6 left-6 z-30">
+        <button
+          onClick={onBack}
+          className="w-12 h-12 flex items-center justify-center rounded-full bg-black/40 border border-white/10 backdrop-blur-md"
+        >
+          <X className="w-6 h-6 text-white" />
+        </button>
+      </div>
+
+      <div className="absolute bottom-10 left-6 z-30">
+        <button className="w-12 h-12 flex items-center justify-center rounded-full bg-black/40 border border-white/10 backdrop-blur-md">
+          <HelpCircle className="w-6 h-6 text-white" />
+        </button>
+      </div>
     </div>
   );
 }
