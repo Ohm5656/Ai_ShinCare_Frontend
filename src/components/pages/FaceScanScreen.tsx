@@ -271,10 +271,13 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
 
     const start = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user' },
+          audio: false
+        });
         streamRef.current = stream;
         video.srcObject = stream;
-        await video.play().catch(()=>{});
+        await video.play().catch(() => {});
       } catch (err) {
         console.error('getUserMedia error', err);
       }
@@ -282,13 +285,24 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
       const fm = new FaceMesh({
         locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`,
       });
-      fm.setOptions({ maxNumFaces:1, refineLandmarks:true, minDetectionConfidence:0.6, minTrackingConfidence:0.6 });
-      fm.onResults(onResults);
+      fm.setOptions({
+        maxNumFaces: 1,
+        refineLandmarks: true,
+        minDetectionConfidence: 0.6,
+        minTrackingConfidence: 0.6,
+      });
+
+      // 🟣 ตรงนี้คือจุดสำคัญ — bind onResults ที่เราแก้ใหม่
+      fm.onResults((r) => onResults(r));
       faceMeshRef.current = fm;
 
       const cam = new Camera(video, {
-        onFrame: async () => { if (faceMeshRef.current) await faceMeshRef.current.send({ image: video }); },
-        width: 720, height: 720,
+        onFrame: async () => {
+          if (faceMeshRef.current)
+            await faceMeshRef.current.send({ image: video });
+        },
+        width: 720,
+        height: 720,
       });
       cam.start();
       mpCameraRef.current = cam;
@@ -297,12 +311,14 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
     start();
 
     return () => {
-      try { mpCameraRef.current?.stop(); } catch {}
+      try {
+        mpCameraRef.current?.stop();
+      } catch {}
       faceMeshRef.current?.close?.();
       if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [onResults]);  // 🟣 เพิ่ม dependency เพื่อให้ onResults ล่าสุดถูก bind ใหม่
+
 
   
   // FaceMesh results handler (stable countdown version)
@@ -319,57 +335,49 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
       return;
     }
 
-    // 1️⃣ ===== คำนวณมุม yaw (หันซ้าย/ขวา/ตรง) =====
+    // 1️⃣ คำนวณ yaw
     const yawRaw = estimateYawDeg(lm);
     const prevYaw = emaYawRef.current || yawRaw;
     const yaw = EMA_ALPHA * yawRaw + (1 - EMA_ALPHA) * prevYaw;
     emaYawRef.current = yaw;
 
-    // ตรวจว่ามุมตอนนี้ถูกไหม
     const okYaw = isYawOk(currentStep, yaw);
     const nearYaw = isYawOkLoose(currentStep, yaw);
 
-    // 2️⃣ ===== ตรวจตำแหน่งใบหน้าในกรอบ (ใช้จมูก) =====
-    const nose = lm[1]; // nose tip landmark
+    // 2️⃣ ตรวจจมูกให้อยู่ในกรอบ
+    const nose = lm[1];
     const xCenter = Math.abs(nose.x - 0.5);
     const yCenter = Math.abs(nose.y - 0.5);
-    const TOL = 0.12; // ความกว้างกรอบที่ยอมให้เบี่ยงได้ 12%
+    const TOL = 0.12;
     const centered = xCenter < TOL && yCenter < TOL;
 
-    // 3️⃣ ===== เงื่อนไขรวม (Hybrid) =====
-    // - ต้องหันหน้าถูกมุม (okYaw)
-    // - และใบหน้าอยู่ในกรอบกลาง (centered)
+    // 3️⃣ Hybrid: หันถูก + อยู่ในกรอบ
     const faceOk = okYaw && centered;
     const faceNear = nearYaw && (xCenter < TOL * 1.3 && yCenter < TOL * 1.3);
 
-    // 4️⃣ ===== ตรวจจับความนิ่ง (stability window) =====
+    // 4️⃣ ตรวจจับความนิ่ง
     const now = performance.now();
 
     if (faceOk) {
-      // เริ่มจับเวลาเมื่อตรงมุมและอยู่ในกรอบ
       if (stableStartRef.current == null) stableStartRef.current = now;
-
       const stableFor = now - stableStartRef.current;
 
-      // ถ้านิ่งเกิน 1 วิและยังไม่มี countdown → เริ่มนับ
-      if (stableFor >= STABLE_MS && countdown == null) {
+      // 🟣 เริ่มนับ countdown ถ้านิ่งเกิน 1 วิ
+      if (stableFor >= STABLE_MS && countdown == null && !isCapturing) {
         setHintReady(true);
         setCountdown(COUNTDOWN_SEC);
       }
     } 
     else if (faceNear) {
-      // 🟡 ถ้าใกล้ถูกมุม ให้โชว์กรอบ dash (แต่ยังไม่นับ)
       setHintReady(false);
     } 
     else {
-      // 🔴 ออกนอกกรอบหรือหันผิดมุม รีเซ็ตใหม่
       stableStartRef.current = null;
       setHintReady(false);
-      if (countdown == null) setCountdown(null);
+      // ✅ อย่ารีเซ็ต countdown ถ้ามันกำลังนับอยู่ หรือกำลังถ่าย
+      if (countdown == null && !isCapturing) setCountdown(null);
     }
   };
-
-
 
   // -----------------------------------------------------------
   // Countdown tick (fixed)
