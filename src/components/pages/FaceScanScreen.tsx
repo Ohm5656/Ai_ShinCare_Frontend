@@ -347,17 +347,23 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
 
 
   // -----------------------------------------------------------
-  // Countdown tick
+  // Countdown tick (fixed)
   // -----------------------------------------------------------
   useEffect(() => {
     if (countdown == null) return;
+
+    // ถ้าค่าถึงศูนย์แล้ว -> ถ่าย
     if (countdown <= 0) {
-      setCountdown(null);
       doCapture();
       return;
     }
-    const id = setTimeout(() => setCountdown(c => (c ?? 0) - 1), 1000);
-    return () => clearTimeout(id);
+
+    // ลดค่า countdown ทุก 1 วิ
+    const timer = setTimeout(() => {
+      setCountdown(prev => (prev !== null ? prev - 1 : null));
+    }, 1000);
+
+    return () => clearTimeout(timer);
   }, [countdown]);
 
   // -----------------------------------------------------------
@@ -369,6 +375,8 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
     if (!video || !canvas) return;
     if (isCapturing) return;
     setIsCapturing(true);
+    setCountdown(null); // reset countdown หลังเริ่มถ่าย
+
 
     // compute target size (keep 280:340 ratio)
     const W = CAPTURE_W;
