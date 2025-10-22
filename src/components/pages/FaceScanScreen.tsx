@@ -304,52 +304,56 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // -----------------------------------------------------------
-  // FaceMesh results handler
+  
+  // FaceMesh results handler (stable countdown version)
   // -----------------------------------------------------------
   const onResults = (res: any) => {
-  if (currentStep === 'analyzing') return;
-  const lm = res.multiFaceLandmarks?.[0];
-  if (!lm) {
-    stableStartRef.current = null;
-    setHintReady(false);
-    setCountdown(null);
-    return;
-  }
+    if (currentStep === 'analyzing') return;
+    const lm = res.multiFaceLandmarks?.[0];
 
-  // 1️⃣ คำนวณ yaw + smoothing
-  const yawRaw = estimateYawDeg(lm);
-  const prev = emaYawRef.current || yawRaw;
-  const yaw = EMA_ALPHA * yawRaw + (1 - EMA_ALPHA) * prev;
-  emaYawRef.current = yaw;
-
-  const ok = isYawOk(currentStep, yaw);
-  const near = isYawOkLoose(currentStep, yaw);
-
-  // 2️⃣ ตรวจจับว่ามุมถูกต้อง (ok)
-  if (ok) {
-    // ถ้ายังไม่มีเวลาเริ่มจับนิ่ง → เซ็ตตอนนี้
-    if (stableStartRef.current == null) stableStartRef.current = performance.now();
-
-    const stableFor = performance.now() - stableStartRef.current;
-
-    // ถ้าอยู่นิ่งเกิน 1 วิและยังไม่มี countdown → เริ่มนับถอยหลัง
-    if (stableFor >= STABLE_MS && countdown == null) {
-      setHintReady(true);
-      setCountdown(COUNTDOWN_SEC);
-    }
-  } else {
-    // 🟣 รีเซ็ตเมื่อหลุดจากมุมจริง ๆ เท่านั้น (แก้ countdown รีเซ็ตเอง)
-    stableStartRef.current = null;
-    setHintReady(false);
-
-    // ❗ อย่ารีเซ็ต countdown ถ้ามันกำลังนับอยู่
-    // ให้รีเซ็ตเฉพาะตอนที่ countdown = null เท่านั้น
-    if (countdown == null && !near) {
+    // ❌ ถ้าไม่มีหน้าเลย → รีเซ็ตทั้งหมด
+    if (!lm) {
+      stableStartRef.current = null;
+      setHintReady(false);
       setCountdown(null);
+      return;
     }
-  }
-};
+
+    // 1️⃣ คำนวณ yaw + smoothing
+    const yawRaw = estimateYawDeg(lm);
+    const prev = emaYawRef.current || yawRaw;
+    const yaw = EMA_ALPHA * yawRaw + (1 - EMA_ALPHA) * prev;
+    emaYawRef.current = yaw;
+
+    // ตรวจมุม
+    const ok = isYawOk(currentStep, yaw);
+    const near = isYawOkLoose(currentStep, yaw);
+
+    // 🧠 พารามิเตอร์สำหรับความนิ่ง (1 วิ)
+    const now = performance.now();
+    const prevStableStart = stableStartRef.current;
+
+    if (ok) {
+      // ถ้ามุมถูกต้อง → เริ่มจับเวลา
+      if (!prevStableStart) stableStartRef.current = now;
+      const stableFor = now - (stableStartRef.current ?? now);
+
+      // อยู่ในมุมถูกเกิน 1 วิ + ยังไม่มี countdown → เริ่มนับ
+      if (stableFor >= STABLE_MS && countdown == null) {
+        setHintReady(true);
+        setCountdown(COUNTDOWN_SEC);
+      }
+    } else if (near) {
+      // 🟡 ถ้ามุมใกล้เคียงแต่ไม่ตรงเป๊ะ → ยังคงจับเวลาต่อ
+      // (ไม่รีเซ็ต countdown)
+      setHintReady(false);
+    } else {
+      // 🔴 ถ้ามุมหลุดมากจริง ๆ ค่อยรีเซ็ต
+      stableStartRef.current = null;
+      setHintReady(false);
+      if (countdown == null) setCountdown(null);
+    }
+  };
 
 
   // -----------------------------------------------------------
