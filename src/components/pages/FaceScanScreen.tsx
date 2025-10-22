@@ -328,20 +328,26 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
 
   // 2️⃣ ตรวจจับว่ามุมถูกต้อง (ok)
   if (ok) {
+    // ถ้ายังไม่มีเวลาเริ่มจับนิ่ง → เซ็ตตอนนี้
     if (stableStartRef.current == null) stableStartRef.current = performance.now();
 
     const stableFor = performance.now() - stableStartRef.current;
 
-    // ถ้าอยู่นิ่งเกิน 1 วิและยังไม่มี countdown
+    // ถ้าอยู่นิ่งเกิน 1 วิและยังไม่มี countdown → เริ่มนับถอยหลัง
     if (stableFor >= STABLE_MS && countdown == null) {
       setHintReady(true);
       setCountdown(COUNTDOWN_SEC);
     }
   } else {
-    // รีเซ็ตเมื่อออกจากมุม
+    // 🟣 รีเซ็ตเมื่อหลุดจากมุมจริง ๆ เท่านั้น (แก้ countdown รีเซ็ตเอง)
     stableStartRef.current = null;
     setHintReady(false);
-    if (!near) setCountdown(null);
+
+    // ❗ อย่ารีเซ็ต countdown ถ้ามันกำลังนับอยู่
+    // ให้รีเซ็ตเฉพาะตอนที่ countdown = null เท่านั้น
+    if (countdown == null && !near) {
+      setCountdown(null);
+    }
   }
 };
 
