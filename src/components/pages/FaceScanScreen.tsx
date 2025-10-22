@@ -7,6 +7,17 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { FaceMesh } from '@mediapipe/face_mesh';
 import { Camera } from '@mediapipe/camera_utils';
 
+/* =====================================================================================
+ *  FaceScanScreen
+ *  - เปิดกล้องจริง (facingMode: 'user') + แสดงภาพในกรอบ 280x340
+ *  - ใช้ MediaPipe FaceMesh คำนวณ yaw (องศา) เพื่อตรวจมุม: front / left / right
+ *  - มี smoothing (EMA) ให้ค่า yaw ลื่นขึ้น ลดเฟรมสั่น
+ *  - ถ้ามุมถูกต้อง: แสดงข้อความ “มุม...ถูกต้อง พร้อมถ่ายใน {countdown}s”
+ *  - อยู่คงที่ >= MIN_STABLE_MS → flash + capture → เดิน step ถัดไป
+ *  - ครบเอฟเฟ็กต์เดิม (glow, pulse, grid/scan, progress, thumbnails)
+ *  - เพิ่มกรอบโครงหน้าสวย ๆ pulse สีเปลี่ยนตามมุม
+ * ===================================================================================== */
+
 interface FaceScanScreenProps {
   onAnalyze: () => void;
   onBack: () => void;
@@ -22,24 +33,28 @@ interface StepStatus {
 
 type Captured = { front: string | null; left: string | null; right: string | null };
 
-// ---------------------- ค่าปรับแต่งการตรวจมุม ----------------------
-const MIN_STABLE_MS = 1000; // ต้องอยู่นิ่งถึง ms ก่อนถ่าย
-const FRONT_YAW_MAX = 6;   // |yaw| ≤ 6° = หน้าตรง
-const SIDE_YAW_MIN = 22;   // |yaw| ≥ 22° = หันข้างพอ
-// --------------------------------------------------------------------
+/* ---------------------- CONFIG ปรับแต่ง ---------------------- */
+const MIN_STABLE_MS = 1000; // ต้องนิ่งขั้นต่ำก่อนถ่าย (ms)
+const FRONT_YAW_MAX = 6;    // |yaw| ≤ 6° ถือว่า "หน้าตรง"
+const SIDE_YAW_MIN = 22;    // |yaw| ≥ 22° ถือว่า "หันข้างพอ"
+const SMOOTH_ALPHA = 0.35;  // EMA smoothing สำหรับ yaw
+/* -------------------------------------------------------------- */
 
 export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
   const { t } = useLanguage();
 
+  /* ---------------------- STATE หลัก ---------------------- */
   const [currentStep, setCurrentStep] = useState<ScanStep>('front');
   const [completedSteps, setCompletedSteps] = useState<StepStatus>({
     front: false,
     left: false,
     right: false,
   });
+  const [isCapturing, setIsCapturing] = useState(false); // flash ตอนถ่าย
+  const [isReadyToCapture, setIsReadyToCapture] = useState(false); // มุมถูกต้องหรือยัง
+  const [countdown, setCountdown] = useState<number | null>(null); // แสดง 3..2..1
 
-  const [isCapturing, setIsCapturing] = useState(false); // ใช้ทำแฟลช
-  const [progress, setProgress] = useState(0);
+  const [progress, setProgress] = useState(0); // analyze progress
   const [capturedImages, setCapturedImages] = useState<Captured>({
     front: null,
     left: null,
@@ -47,91 +62,79 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
   });
   const [analyzingImageIndex, setAnalyzingImageIndex] = useState(0);
 
-  // refs สำหรับกล้อง/mediapipe และจับความนิ่ง
+  /* ---------------------- REFS กล้อง/ประมวลผล ---------------------- */
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const hiddenCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const mpCameraRef = useRef<Camera | null>(null);
   const faceMeshRef = useRef<FaceMesh | null>(null);
-  const stableStartRef = useRef<number | null>(null);
-  const lastYawRef = useRef<number>(0);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // ===================== Helpers: แปลข้อความต่อสเต็ป =====================
+  const smoothYaw = useRef<number | null>(null);         // ค่า yaw หลัง smooth
+  const stableStartRef = useRef<number | null>(null);    // เวลาเริ่มนิ่ง
+  /* --------------------------------------------------------------- */
+
+  /* ---------------------- ข้อความ/ธีมต่อมุม ---------------------- */
   const getStepInfo = useMemo(() => {
     return () => {
       switch (currentStep) {
         case 'front':
           return {
             title:
-              t.language === 'th'
-                ? 'มุมที่ 1: หน้าตรง'
-                : t.language === 'en'
-                ? 'Angle 1: Front Face'
-                : '角度 1：正面',
+              t.language === 'th' ? 'มุมที่ 1: หน้าตรง' :
+              t.language === 'en' ? 'Angle 1: Front Face' : '角度 1：正面',
             instruction:
-              t.language === 'th'
-                ? 'มองตรงไปที่กล้อง'
-                : t.language === 'en'
-                ? 'Look straight at the camera'
-                : '直视相机',
+              t.language === 'th' ? 'มองตรงไปที่กล้อง' :
+              t.language === 'en' ? 'Look straight at the camera' : '直视相机',
             emoji: '👤',
-            color: '#FFB5D9',
+            color: '#FFB5D9', // ชมพู
+            themeName: 'pink',
+            readyTextTh: 'มุมหน้าตรงถูกต้อง พร้อมถ่ายใน',
+            readyTextEn: 'Front angle OK. Capturing in',
+            readyTextZh: '正面角度正确，准备在',
           };
         case 'left':
           return {
             title:
-              t.language === 'th'
-                ? 'มุมที่ 2: หันด้านซ้าย'
-                : t.language === 'en'
-                ? 'Angle 2: Turn Left'
-                : '角度 2：向左转',
+              t.language === 'th' ? 'มุมที่ 2: หันด้านซ้าย' :
+              t.language === 'en' ? 'Angle 2: Turn Left' : '角度 2：向左转',
             instruction:
-              t.language === 'th'
-                ? 'หันหน้าไปทางซ้าย ~45°'
-                : t.language === 'en'
-                ? 'Turn your face left ~45°'
-                : '将脸向左转约45°',
+              t.language === 'th' ? 'หันหน้าไปทางซ้าย ~45°' :
+              t.language === 'en' ? 'Turn your face left ~45°' : '将脸向左转约45°',
             icon: 'left',
-            color: '#7DB8FF',
+            color: '#7DB8FF', // ฟ้า
+            themeName: 'blue',
+            readyTextTh: 'มุมซ้ายถูกต้อง พร้อมถ่ายใน',
+            readyTextEn: 'Left angle OK. Capturing in',
+            readyTextZh: '左侧角度正确，准备在',
           };
         case 'right':
           return {
             title:
-              t.language === 'th'
-                ? 'มุมที่ 3: หันด้านขวา'
-                : t.language === 'en'
-                ? 'Angle 3: Turn Right'
-                : '角度 3：向右转',
+              t.language === 'th' ? 'มุมที่ 3: หันด้านขวา' :
+              t.language === 'en' ? 'Angle 3: Turn Right' : '角度 3：向右转',
             instruction:
-              t.language === 'th'
-                ? 'หันหน้าไปทางขวา ~45°'
-                : t.language === 'en'
-                ? 'Turn your face right ~45°'
-                : '将脸向右转约45°',
+              t.language === 'th' ? 'หันหน้าไปทางขวา ~45°' :
+              t.language === 'en' ? 'Turn your face right ~45°' : '将脸向右转约45°',
             icon: 'right',
-            color: '#CBB8FF',
+            color: '#CBB8FF', // ม่วง
+            themeName: 'purple',
+            readyTextTh: 'มุมขวาถูกต้อง พร้อมถ่ายใน',
+            readyTextEn: 'Right angle OK. Capturing in',
+            readyTextZh: '右侧角度正确，准备在',
           };
         case 'analyzing':
           return {
             title:
-              t.language === 'th'
-                ? 'กำลังวิเคราะห์...'
-                : t.language === 'en'
-                ? 'Analyzing...'
-                : '分析中...',
+              t.language === 'th' ? 'กำลังวิเคราะห์...' :
+              t.language === 'en' ? 'Analyzing...' : '分析中...',
             subtitle:
-              t.language === 'th'
-                ? 'กำลังประมวลผลภาพ 3 มุมของคุณ'
-                : t.language === 'en'
-                ? 'Processing your 3-angle photos'
-                : '正在处理您的三角照片',
+              t.language === 'th' ? 'กำลังประมวลผลภาพ 3 มุมของคุณ' :
+              t.language === 'en' ? 'Processing your 3-angle photos' : '正在处理您的三角照片',
             instruction:
-              t.language === 'th'
-                ? 'กำลังประมวลผล'
-                : t.language === 'en'
-                ? 'Processing'
-                : '处理中',
+              t.language === 'th' ? 'กำลังประมวลผล' :
+              t.language === 'en' ? 'Processing' : '处理中',
             color: '#FFB5D9',
+            themeName: 'pink',
           };
       }
     };
@@ -139,12 +142,11 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
 
   const stepInfo = getStepInfo();
 
-  // ===================== init MediaPipe + กล้องจริง =====================
+  /* ---------------------- เปิดกล้อง + init MediaPipe ---------------------- */
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    // เปิดกล้องก่อน เพื่อให้มี stream (บางเครื่องต้องขอสิทธิ์ก่อน)
     const startStream = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -160,7 +162,6 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
     };
 
     startStream().then(() => {
-      // init FaceMesh
       const faceMesh = new FaceMesh({
         locateFile: (file) =>
           `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
@@ -171,12 +172,10 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
         minDetectionConfidence: 0.6,
         minTrackingConfidence: 0.6,
       });
-
       faceMesh.onResults(onResults);
       faceMeshRef.current = faceMesh;
 
-      // กล้องให้ mediapipe ดึงเฟรมจาก <video> ไปประมวลผล
-      const mpCam = new Camera(video, {
+      const cam = new Camera(video, {
         onFrame: async () => {
           if (faceMeshRef.current) {
             await faceMeshRef.current.send({ image: video });
@@ -185,118 +184,112 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
         width: 720,
         height: 720,
       });
-      mpCam.start();
-      mpCameraRef.current = mpCam;
+      cam.start();
+      mpCameraRef.current = cam;
     });
 
-    // cleanup
     return () => {
-      try {
-        mpCameraRef.current?.stop();
-      } catch {}
+      try { mpCameraRef.current?.stop(); } catch {}
       faceMeshRef.current?.close();
-
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((t) => t.stop());
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ===================== ตัวประมวลผลผลลัพธ์จาก FaceMesh =====================
+  /* ---------------------- callback จาก MediaPipe ---------------------- */
   function onResults(results: any) {
-    if (currentStep === 'analyzing') return; // หยุดตรวจเมื่อเข้าหน้า analyze
+    if (currentStep === 'analyzing') return;
+
     const landmarks = results.multiFaceLandmarks?.[0];
     if (!landmarks) {
       stableStartRef.current = null;
+      setIsReadyToCapture(false);
+      setCountdown(null);
       return;
     }
 
-    // ประมาณ yaw (องศา) จาก landmark แก้มซ้าย/ขวา + จมูก
-    const yaw = estimateYawDeg(landmarks);
-    lastYawRef.current = yaw;
+    const rawYaw = estimateYawDeg(landmarks);
 
-    // เช็คว่าเข้าเงื่อนไขของ step ปัจจุบันมั้ย + ต้องนิ่งพอ
+    // smoothing – ให้ลื่นขึ้น
+    smoothYaw.current =
+      smoothYaw.current == null
+        ? rawYaw
+        : smoothYaw.current * (1 - SMOOTH_ALPHA) + rawYaw * SMOOTH_ALPHA;
+
+    const yaw = smoothYaw.current;
     const ok = isYawOkForStep(yaw, currentStep);
     const now = performance.now();
 
     if (ok) {
       if (stableStartRef.current == null) {
         stableStartRef.current = now;
+        setIsReadyToCapture(true);
+        setCountdown(3); // นับถอยหลังสวย ๆ
       }
       const stableFor = now - stableStartRef.current;
       if (!isCapturing && stableFor >= MIN_STABLE_MS) {
-        // จับภาพจริง + เปลี่ยนสเต็ป
         doCaptureReal();
       }
     } else {
       stableStartRef.current = null;
+      setIsReadyToCapture(false);
+      setCountdown(null);
     }
   }
 
-  // ประมาณ yaw เป็นองศา (- = หันซ้าย, + = หันขวา)
+  /* ---------------------- คำนวณ yaw (deg) ---------------------- */
   function estimateYawDeg(landmarks: any[]): number {
-    // ใช้ landmarks: 234 (แก้มซ้าย), 454 (แก้มขวา), 1 (ปลายจมูก)
-    const L = landmarks[234]; // left cheek
-    const R = landmarks[454]; // right cheek
-    const N = landmarks[1];   // nose tip
-
+    // ใช้จุด landmark: 234 (แก้มซ้าย), 454 (แก้มขวา), 1 (จมูก)
+    const L = landmarks[234];
+    const R = landmarks[454];
+    const N = landmarks[1];
     if (!L || !R || !N) return 0;
 
-    // ค่าของ MediaPipe เป็น normalized [0..1] โดยแกน X ไปขวา
-    // หา midpoint ของแก้มซ้าย/ขวา
     const mx = (L.x + R.x) / 2;
-    const my = (L.y + R.y) / 2;
-
-    // เวกเตอร์จากจุดกึ่งกลางแก้ม -> จมูก (ถ้าหน้าตรง x ของ N จะใกล้ mx)
     const dx = N.x - mx;
-    const dy = N.y - my;
-
-    // แปลงความเบี้ยวแกน X เป็น yaw แบบหยาบ ๆ
-    // คูณสเกลให้กลายเป็นองศาโดยคร่าว (เชิงประสบการณ์)
-    const yawRad = Math.atan2(dx, Math.abs(R.x - L.x)); // อิงความกว้างหน้า
-    const yawDeg = (yawRad * 180) / Math.PI;
-
-    // หมายเหตุ: กล้องหน้า mirrored (เราใส่ scaleX(-1)) => ทิศยังตรงกับความเข้าใจ:
-    // หันซ้าย => yaw ลบ, หันขวา => yaw บวก
-    return yawDeg * 1.4; // ปรับสเกลเล็กน้อยให้สอดคล้อง ~องศาจริง
+    const yawRad = Math.atan2(dx, Math.abs(R.x - L.x));
+    const yawDeg = ((yawRad * 180) / Math.PI) * 1.4; // scale ประสบการณ์
+    // NOTE: เราแสดงวิดีโอแบบ mirror (scaleX(-1)) → ทิศจะเป็น:
+    // หันซ้าย = yaw บวก, หันขวา = yaw ลบ
+    return yawDeg;
   }
 
+  /* ---------------------- ตรวจเงื่อนไขมุม (mirror-friendly) ---------------------- */
   function isYawOkForStep(yaw: number, step: ScanStep): boolean {
-    if (step === 'front') {
-      return Math.abs(yaw) <= FRONT_YAW_MAX;
-    } else if (step === 'left') {
-      return yaw <= -SIDE_YAW_MIN;
-    } else if (step === 'right') {
-      return yaw >= SIDE_YAW_MIN;
-    }
+    if (step === 'front') return Math.abs(yaw) <= FRONT_YAW_MAX;
+    if (step === 'left')  return yaw >= SIDE_YAW_MIN;   // หันซ้าย = บวก
+    if (step === 'right') return yaw <= -SIDE_YAW_MIN;  // หันขวา = ลบ
     return false;
   }
 
-  // ===================== จับภาพจริงจาก <video> + แฟลช + เดินสเต็ป =====================
+  /* ---------------------- Countdown นับ 3..2..1 ---------------------- */
+  useEffect(() => {
+    if (isReadyToCapture && countdown !== null && countdown > 0) {
+      const timer = setTimeout(() => setCountdown((c) => (c ? c - 1 : 0)), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isReadyToCapture, countdown]);
+
+  /* ---------------------- ถ่ายภาพจริง + เดิน step ---------------------- */
   function doCaptureReal() {
     const video = videoRef.current;
     const canvas = hiddenCanvasRef.current;
     if (!video || !canvas) return;
 
-    // แฟลช
+    // flash
     setIsCapturing(true);
 
-    // เซ็ตขนาด canvas เท่ากรอบวิดีโอ (เราใช้กรอบ 280 x 340 ที่ UI)
-    // แต่เพื่อคุณภาพ ให้จับจาก video ที่สัดส่วนใกล้เคียง
-    const W = 560; // คุณภาพกลาง-สูง (ไม่หนักเกิน)
+    // จับจาก video → base64
+    const W = 560; // ความละเอียดกลาง-สูง
     const H = Math.round((W * 340) / 280);
     canvas.width = W;
     canvas.height = H;
-
     const ctx = canvas.getContext('2d')!;
-    // วิดีโอเรา mirrored ด้วย CSS => เพื่อให้รูปที่เซฟตรงทิศตาเปล่า ให้ mirrored ด้วย
     ctx.save();
-    ctx.scale(-1, 1);
+    ctx.scale(-1, 1); // ให้รูปที่ได้เหมือนที่ตาเห็นจาก mirror
     ctx.drawImage(video, -W, 0, W, H);
     ctx.restore();
-
-    // base64
     const dataURL = canvas.toDataURL('image/jpeg', 0.92);
 
     const next = { ...completedSteps };
@@ -319,21 +312,19 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
       nextImgs.right = dataURL;
       setCompletedSteps(next);
       setCapturedImages(nextImgs);
-
-      // ไป analyzing
-      setTimeout(() => setCurrentStep('analyzing'), 450);
+      setTimeout(() => setCurrentStep('analyzing'), 500);
     }
 
-    // ปิดแฟลชชั่วคราว (คงไว้ตามเดิม ~0.5s)
+    // ปิดแฟลช/รีเซ็ต
     setTimeout(() => setIsCapturing(false), 500);
-    // รีเซ็ตจับนิ่ง
     stableStartRef.current = null;
+    setIsReadyToCapture(false);
+    setCountdown(null);
   }
 
-  // ===================== Progress ระหว่าง analyzing =====================
+  /* ---------------------- Progress + thumbnails ตอน analyze ---------------------- */
   useEffect(() => {
     if (currentStep !== 'analyzing') return;
-
     const id = setInterval(() => {
       setProgress((p) => {
         if (p >= 100) {
@@ -344,11 +335,9 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
         return p + 2.5; // ~6s
       });
     }, 150);
-
     return () => clearInterval(id);
   }, [currentStep, onAnalyze]);
 
-  // หมุนรูปโชว์ 3 มุมตอน analyze
   useEffect(() => {
     if (currentStep !== 'analyzing') return;
     const rot = setInterval(() => {
@@ -357,7 +346,7 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
     return () => clearInterval(rot);
   }, [currentStep]);
 
-  // ===================== UI Helpers (ลูกศรซ้าย/ขวา) =====================
+  /* ---------------------- UI helpers ---------------------- */
   const ArrowLeftIcon = () => (
     <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="32" cy="32" r="28" fill="#7DB8FF" fillOpacity="0.2" />
@@ -375,21 +364,18 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
 
   const info = stepInfo;
 
+  /* ====================== RENDER ====================== */
   return (
-    <div
-      className="min-h-screen relative overflow-hidden"
-      style={{ background: 'linear-gradient(180deg, #0A0F1C 0%, #111827 100%)' }}
-    >
-      {/* BG (เดิม) */}
+    <div className="min-h-screen relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #0A0F1C 0%, #111827 100%)' }}>
+      {/* BG layer */}
       <div
         className="absolute inset-0"
         style={{
-          background:
-            'radial-gradient(ellipse at center, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 1) 100%)',
+          background: 'radial-gradient(ellipse at center, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 1) 100%)',
         }}
       />
 
-      {/* Flash ตอนถ่าย (เดิม) */}
+      {/* Flash ตอนถ่าย */}
       <AnimatePresence>
         {isCapturing && (
           <motion.div
@@ -403,19 +389,22 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
         )}
       </AnimatePresence>
 
-      {/* ปุ่มปิด (เดิม) */}
+      {/* ปุ่มปิด */}
       <motion.button
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
         onClick={onBack}
         className="absolute top-6 left-6 z-20 w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md"
-        style={{ background: 'rgba(0, 0, 0, 0.5)', border: '1px solid rgba(255, 255, 255, 0.2)' }}
+        style={{
+          background: 'rgba(0, 0, 0, 0.5)',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+        }}
       >
         <X className="w-6 h-6 text-white" />
       </motion.button>
 
-      {/* ตัวชี้สถานะด้านบน (เดิม) */}
+      {/* Step Indicator / Thumbnails (บน) */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -424,10 +413,9 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
       >
         {currentStep === 'analyzing' ? (
           <>
-            {/* โชว์รูปที่ถ่ายได้จริง 3 มุม */}
-            {(['front', 'left', 'right'] as const).map((k, idx) => (
+            {(['front', 'left', 'right'] as const).map((key, idx) => (
               <motion.div
-                key={k}
+                key={key}
                 className="relative w-16 h-20 rounded-2xl overflow-hidden backdrop-blur-md"
                 animate={{
                   scale: analyzingImageIndex === idx ? 1.15 : 1,
@@ -435,30 +423,31 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
                 }}
                 style={{
                   background:
-                    idx === 0
-                      ? 'rgba(255, 181, 217, 0.2)'
-                      : idx === 1
-                      ? 'rgba(125, 184, 255, 0.2)'
-                      : 'rgba(203, 184, 255, 0.2)',
+                    idx === 0 ? 'rgba(255, 181, 217, 0.2)' :
+                    idx === 1 ? 'rgba(125, 184, 255, 0.2)' :
+                                 'rgba(203, 184, 255, 0.2)',
                   border:
-                    idx === 0 ? '2px solid #FFB5D9' : idx === 1 ? '2px solid #7DB8FF' : '2px solid #CBB8FF',
+                    idx === 0 ? '2px solid #FFB5D9' :
+                    idx === 1 ? '2px solid #7DB8FF' : '2px solid #CBB8FF',
                   boxShadow:
                     analyzingImageIndex === idx
                       ? `0 0 20px ${
-                          idx === 0 ? 'rgba(255, 181, 217, 0.6)' : idx === 1 ? 'rgba(125, 184, 255, 0.6)' : 'rgba(203, 184, 255, 0.6)'
+                          idx === 0
+                            ? 'rgba(255, 181, 217, 0.6)'
+                            : idx === 1
+                            ? 'rgba(125, 184, 255, 0.6)'
+                            : 'rgba(203, 184, 255, 0.6)'
                         }`
                       : 'none',
                 }}
               >
-                {capturedImages[k] && (
-                  <img src={capturedImages[k]!} alt={k} className="w-full h-full object-cover" />
-                )}
+                {capturedImages[key] && <img src={capturedImages[key]!} alt={key} className="w-full h-full object-cover" />}
               </motion.div>
             ))}
           </>
         ) : (
           <>
-            {/* Front */}
+            {/* 1 Front */}
             <motion.div
               className="w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md"
               animate={{
@@ -489,7 +478,7 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
               {completedSteps.front ? <Check className="w-5 h-5 text-white" /> : <span className="text-white">1</span>}
             </motion.div>
 
-            {/* Left */}
+            {/* 2 Left */}
             <motion.div
               className="w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md"
               animate={{
@@ -520,7 +509,7 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
               {completedSteps.left ? <Check className="w-5 h-5 text-white" /> : <span className="text-white">2</span>}
             </motion.div>
 
-            {/* Right */}
+            {/* 3 Right */}
             <motion.div
               className="w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md"
               animate={{
@@ -554,9 +543,9 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
         )}
       </motion.div>
 
-      {/* กล่องหลัก */}
+      {/* กล่องหลัก (content) */}
       <div className="relative h-screen flex flex-col items-center justify-center px-6">
-        {/* หัวข้อ/คำแนะนำ */}
+        {/* Title / Instruction */}
         {currentStep !== 'analyzing' ? (
           <motion.div
             key={currentStep}
@@ -570,13 +559,9 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
               className="mb-3 flex items-center justify-center"
             >
               {info.icon === 'left' ? (
-                <div className="w-16 h-16">
-                  <ArrowLeftIcon />
-                </div>
+                <div className="w-16 h-16"><ArrowLeftIcon /></div>
               ) : info.icon === 'right' ? (
-                <div className="w-16 h-16">
-                  <ArrowRightIcon />
-                </div>
+                <div className="w-16 h-16"><ArrowRightIcon /></div>
               ) : (
                 <div className="text-6xl">{info.emoji}</div>
               )}
@@ -589,7 +574,11 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
             </p>
           </motion.div>
         ) : (
-          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="absolute top-32 left-0 right-0 text-center z-10 px-6">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="absolute top-32 left-0 right-0 text-center z-10 px-6"
+          >
             <motion.h2
               className="text-white mb-2"
               animate={{ opacity: [1, 0.7, 1] }}
@@ -605,14 +594,24 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
               transition={{ delay: 0.3 }}
               style={{ color: info.color, textShadow: '0 2px 10px rgba(0, 0, 0, 0.8)' }}
             >
-              {info.subtitle}
+              {t.language === 'th'
+                ? 'กำลังประมวลผลภาพ 3 มุมของคุณ'
+                : t.language === 'en'
+                ? 'Processing your 3-angle photos'
+                : '正在处理您的三角照片'}
             </motion.p>
           </motion.div>
         )}
 
-        {/* ======= กล่องสแกนมีกรอบ/เงาเดิม + วิดีโอกล้องจริงอยู่ "ในกรอบ" ======= */}
-        <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6 }} className="relative z-10" style={{ width: '280px', height: '340px' }}>
-          {/* Glow BG เดิม */}
+        {/* === กรอบสแกน 280x340 + วิดีโอจริง === */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6 }}
+          className="relative z-10"
+          style={{ width: '280px', height: '340px' }}
+        >
+          {/* Glow BG */}
           <motion.div
             className="absolute inset-0 rounded-3xl"
             animate={{
@@ -627,12 +626,16 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
             style={{ transform: 'scale(1.3)' }}
           />
 
-          {/* กรอบ gradient เดิม */}
+          {/* Gradient Border + Pulse */}
           <motion.div
             className="absolute inset-0 rounded-3xl"
             animate={{
               opacity: [0.6, 1, 0.6],
-              boxShadow: [`0 0 20px ${info.color}60`, `0 0 40px ${info.color}80`, `0 0 20px ${info.color}60`],
+              boxShadow: [
+                `0 0 20px ${info.color}60`,
+                `0 0 40px ${info.color}80`,
+                `0 0 20px ${info.color}60`,
+              ],
             }}
             transition={{ duration: 2, repeat: Infinity }}
             style={{
@@ -644,7 +647,7 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
             }}
           />
 
-          {/* วิดีโอกล้องจริง (แทนรูปไกด์) */}
+          {/* วิดีโอจริงในกรอบ */}
           <video
             ref={videoRef}
             autoPlay
@@ -654,101 +657,47 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
             style={{ transform: 'scaleX(-1)' }}
           />
 
-          {/* เอฟเฟ็กต์สแกน (เฉพาะตอน analyzing) เดิม */}
-          {currentStep === 'analyzing' && (
-            <>
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  backgroundImage: `
-                    linear-gradient(rgba(125, 184, 255, 0.1) 1px, transparent 1px),
-                    linear-gradient(90deg, rgba(125, 184, 255, 0.1) 1px, transparent 1px)
-                  `,
-                  backgroundSize: '20px 20px',
-                }}
-              />
-              <motion.div
-                className="absolute left-0 right-0 h-1 pointer-events-none z-10"
-                animate={{ top: ['0%', '100%'] }}
-                transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                style={{
-                  background: `linear-gradient(90deg, transparent, #7DB8FFFF, transparent)`,
-                  boxShadow: `0 0 20px #7DB8FFCC, 0 0 40px #7DB8FF88`,
-                }}
-              />
-              <motion.div
-                className="absolute left-0 right-0 h-0.5 pointer-events-none z-10"
-                animate={{ top: ['10%', '110%'] }}
-                transition={{ duration: 2.5, repeat: Infinity, ease: 'linear', delay: 0.3 }}
-                style={{ background: `linear-gradient(90deg, transparent, #FFB5D9CC, transparent)`, boxShadow: `0 0 15px #FFB5D999` }}
-              />
-              <motion.div
-                className="absolute left-0 right-0 h-0.5 pointer-events-none z-10"
-                animate={{ top: ['20%', '120%'] }}
-                transition={{ duration: 3, repeat: Infinity, ease: 'linear', delay: 0.6 }}
-                style={{ background: `linear-gradient(90deg, transparent, #CBB8FFCC, transparent)`, boxShadow: `0 0 15px #CBB8FF99` }}
-              />
-              {[...Array(8)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  className="absolute w-1 h-1 rounded-full pointer-events-none"
-                  animate={{ top: ['0%', '100%'], left: `${10 + i * 11}%`, opacity: [0, 1, 0] }}
-                  transition={{ duration: 2 + i * 0.2, repeat: Infinity, ease: 'linear', delay: i * 0.15 }}
-                  style={{
-                    background: i % 3 === 0 ? '#7DB8FF' : i % 3 === 1 ? '#FFB5D9' : '#CBB8FF',
-                    boxShadow: `0 0 10px ${i % 3 === 0 ? '#7DB8FF' : i % 3 === 1 ? '#FFB5D9' : '#CBB8FF'}`,
-                  }}
-                />
-              ))}
-              {['top-left', 'top-right', 'bottom-left', 'bottom-right'].map((corner) => (
-                <motion.div
-                  key={corner}
-                  className={`absolute w-8 h-8 pointer-events-none ${
-                    corner === 'top-left' ? 'top-0 left-0' : corner === 'top-right' ? 'top-0 right-0' : corner === 'bottom-left' ? 'bottom-0 left-0' : 'bottom-0 right-0'
-                  }`}
-                  animate={{ opacity: [0.3, 1, 0.3] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                >
-                  <div
-                    className="w-full h-full"
-                    style={{
-                      borderTop: corner.includes('top') ? '3px solid #7DB8FF' : 'none',
-                      borderBottom: corner.includes('bottom') ? '3px solid #7DB8FF' : 'none',
-                      borderLeft: corner.includes('left') ? '3px solid #7DB8FF' : 'none',
-                      borderRight: corner.includes('right') ? '3px solid #7DB8FF' : 'none',
-                      boxShadow: '0 0 10px #7DB8FF88',
-                    }}
-                  />
-                </motion.div>
-              ))}
-            </>
-          )}
+          {/* 🟣 กรอบโครงหน้า (Face Guide) — สี pulse เมื่อมุมถูกต้อง */}
+          <FaceGuideOverlay isReady={isReadyToCapture} themeColor={info.color} />
 
-          {/* วงนับถอยหลังกระพริบ (เดิม) */}
-          {currentStep !== 'analyzing' && (
-            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -bottom-16 left-1/2 transform -translate-x-1/2">
-              <motion.div
-                className="w-16 h-16 rounded-full flex items-center justify-center backdrop-blur-md"
-                animate={{ boxShadow: [`0 0 0 0 ${info.color}40`, `0 0 0 20px ${info.color}00`] }}
-                transition={{ duration: 3, repeat: Infinity }}
-                style={{ background: `${info.color}30`, border: `2px solid ${info.color}` }}
+          {/* ข้อความ "มุมถูกต้อง พร้อมถ่ายใน 3s" */}
+          {isReadyToCapture && countdown !== null && (
+            <motion.div
+              key="ready"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="absolute -bottom-16 left-1/2 -translate-x-1/2 text-center"
+            >
+              <div
+                className="rounded-full px-4 py-2 text-sm font-medium backdrop-blur-md"
+                style={{ background: `${info.color}22`, border: `1px solid ${info.color}66`, color: '#E6F9FF' }}
               >
-                <motion.div
-                  className="w-12 h-12 rounded-full"
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 3, ease: 'linear', repeat: Infinity }}
-                  style={{ border: `3px solid transparent`, borderTopColor: info.color }}
-                />
-              </motion.div>
+                {t.language === 'th'
+                  ? `${info.readyTextTh} ${countdown}s`
+                  : t.language === 'en'
+                  ? `${info.readyTextEn} ${countdown}s`
+                  : `${info.readyTextZh} ${countdown}秒内拍摄`}
+              </div>
             </motion.div>
           )}
         </motion.div>
 
-        {/* แถบ progress ตอน analyzing (เดิม) */}
+        {/* Progress Bar (ตอน analyzing) */}
         <AnimatePresence>
           {currentStep === 'analyzing' && (
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="absolute bottom-20 left-0 right-0 px-6 z-10">
-              <div className="rounded-3xl p-6 backdrop-blur-md" style={{ background: 'rgba(0, 0, 0, 0.8)', border: '1px solid rgba(255, 255, 255, 0.2)' }}>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="absolute bottom-20 left-0 right-0 px-6 z-10"
+            >
+              <div
+                className="rounded-3xl p-6 backdrop-blur-md"
+                style={{
+                  background: 'rgba(0, 0, 0, 0.8)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                }}
+              >
                 <div className="text-white text-center mb-4">{info.instruction}</div>
                 <div className="relative h-3 bg-gray-800 rounded-full overflow-hidden mb-3">
                   <motion.div
@@ -771,8 +720,73 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
         </AnimatePresence>
       </div>
 
-      {/* canvas ซ่อนสำหรับ capture จริง */}
+      {/* แคนวาสซ่อนสำหรับ capture */}
       <canvas ref={hiddenCanvasRef} style={{ display: 'none' }} />
     </div>
+  );
+}
+
+/* =====================================================================================
+ * FaceGuideOverlay
+ * - วาด “กรอบโครงหน้า” user-friendly: วงรี + corner brackets + pulse glow
+ * - ถ้า isReady = true → pulse สีแรงขึ้น + เส้นวิ่งเนียน ๆ
+ * ===================================================================================== */
+function FaceGuideOverlay({ isReady, themeColor }: { isReady: boolean; themeColor: string }) {
+  return (
+    <>
+      {/* วงรีกึ่งโปร่ง + pulse */}
+      <motion.div
+        className="absolute inset-0 pointer-events-none"
+        animate={{
+          opacity: isReady ? [0.9, 1, 0.9] : [0.5, 0.6, 0.5],
+          filter: isReady ? ['drop-shadow(0 0 12px rgba(255,255,255,0.7))', 'drop-shadow(0 0 22px rgba(255,255,255,1))', 'drop-shadow(0 0 12px rgba(255,255,255,0.7))'] : 'none',
+        }}
+        transition={{ duration: 1.4, repeat: Infinity }}
+      >
+        <svg viewBox="0 0 280 340" className="absolute inset-0 w-full h-full">
+          <defs>
+            <radialGradient id="fgGlow" cx="50%" cy="40%" r="60%">
+              <stop offset="0%" stopColor={`${themeColor}66`} />
+              <stop offset="100%" stopColor="transparent" />
+            </radialGradient>
+          </defs>
+          {/* วงรีหลัก (ใบหน้า) */}
+          <ellipse cx="140" cy="160" rx="84" ry="112" fill="url(#fgGlow)" stroke={themeColor} strokeWidth="2.5" />
+
+          {/* มาร์กมุม (corner brackets) */}
+          {renderCorners(themeColor)}
+
+          {/* เส้นวิ่งแนวนอน (สแกนเนียน ๆ) */}
+          <motion.rect
+            x="24"
+            y="60"
+            width="232"
+            height="2"
+            rx="1"
+            animate={{ y: ['60', '280'] }}
+            transition={{ duration: 2.2, repeat: Infinity, ease: 'linear' }}
+            fill={isReady ? themeColor : `${themeColor}77`}
+            opacity={0.9}
+          />
+        </svg>
+      </motion.div>
+    </>
+  );
+}
+
+function renderCorners(color: string) {
+  const s = 18; // ความยาว corner
+  const w = 3;  // ความหนาเส้น
+  return (
+    <>
+      {/* TL */}
+      <path d={`M20,20 h${s} M20,20 v${s}`} stroke={color} strokeWidth={w} fill="none" />
+      {/* TR */}
+      <path d={`M260,20 h-${s} M260,20 v${s}`} stroke={color} strokeWidth={w} fill="none" />
+      {/* BL */}
+      <path d={`M20,320 h${s} M20,320 v-${s}`} stroke={color} strokeWidth={w} fill="none" />
+      {/* BR */}
+      <path d={`M260,320 h-${s} M260,320 v-${s}`} stroke={color} strokeWidth={w} fill="none" />
+    </>
   );
 }
