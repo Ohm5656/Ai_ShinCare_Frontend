@@ -16,6 +16,7 @@ import { FaceMesh } from '@mediapipe/face_mesh';
 import { Camera } from '@mediapipe/camera_utils';
 import { useLanguage } from '../../contexts/LanguageContext';
 
+
 // -------------------------------------------------------------
 // Types
 // -------------------------------------------------------------
@@ -79,7 +80,7 @@ function estimateYawDeg(landmarks: any[]): number {
   const yawRad = Math.atan2(dx, width);   // rough
   const yawDeg = (yawRad * 180) / Math.PI;
   // Scale tweak to better match real-world feel
-  return yawDeg * 1.4;
+  return -yawDeg * 1.4;
 }
 
 // -------------------------------------------------------------
@@ -207,6 +208,8 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
   // stability & detection
   const [isCapturing, setIsCapturing] = useState(false); // flash
   const [countdown, setCountdown] = useState<number | null>(null);
+  const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   const [hintReady, setHintReady] = useState(false);     // “มุมถูกต้อง – ถ่ายใน 3 วิ”
   const stableStartRef = useRef<number | null>(null);
   const emaYawRef = useRef<number>(0);                    // smoothed yaw
@@ -305,40 +308,43 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
   // FaceMesh results handler
   // -----------------------------------------------------------
   const onResults = (res: any) => {
-    if (currentStep === 'analyzing') return;
-    const lm = res.multiFaceLandmarks?.[0];
-    if (!lm) {
-      stableStartRef.current = null;
-      setHintReady(false);
-      setCountdown(null);
-      return;
+  if (currentStep === 'analyzing') return;
+  const lm = res.multiFaceLandmarks?.[0];
+  if (!lm) {
+    stableStartRef.current = null;
+    setHintReady(false);
+    setCountdown(null);
+    return;
+  }
+
+  // 1️⃣ คำนวณ yaw + smoothing
+  const yawRaw = estimateYawDeg(lm);
+  const prev = emaYawRef.current || yawRaw;
+  const yaw = EMA_ALPHA * yawRaw + (1 - EMA_ALPHA) * prev;
+  emaYawRef.current = yaw;
+
+  const ok = isYawOk(currentStep, yaw);
+  const near = isYawOkLoose(currentStep, yaw);
+
+  // 2️⃣ ตรวจจับว่ามุมถูกต้อง (ok)
+  if (ok) {
+    if (stableStartRef.current == null) stableStartRef.current = performance.now();
+
+    const stableFor = performance.now() - stableStartRef.current;
+
+    // ถ้าอยู่นิ่งเกิน 1 วิและยังไม่มี countdown
+    if (stableFor >= STABLE_MS && countdown == null) {
+      setHintReady(true);
+      setCountdown(COUNTDOWN_SEC);
     }
+  } else {
+    // รีเซ็ตเมื่อออกจากมุม
+    stableStartRef.current = null;
+    setHintReady(false);
+    if (!near) setCountdown(null);
+  }
+};
 
-    // estimate yaw & smooth (EMA)
-    const yawRaw = estimateYawDeg(lm);
-    const prev = emaYawRef.current || yawRaw;
-    const yaw = EMA_ALPHA * yawRaw + (1 - EMA_ALPHA) * prev;
-    emaYawRef.current = yaw;
-
-    const ok = isYawOk(currentStep, yaw);
-    const near = isYawOkLoose(currentStep, yaw);
-
-    if (ok) {
-      if (stableStartRef.current == null) stableStartRef.current = performance.now();
-      const dur = performance.now() - (stableStartRef.current ?? 0);
-
-      // show "ready" hint during stability window
-      if (dur >= STABLE_MS && countdown == null) {
-        setHintReady(true);
-        setCountdown(COUNTDOWN_SEC);
-      }
-    } else {
-      // reset when out of valid range (but keep hint if still near)
-      stableStartRef.current = null;
-      setHintReady(false);
-      if (!near) setCountdown(null);
-    }
-  };
 
   // -----------------------------------------------------------
   // Countdown tick
@@ -361,7 +367,7 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
     const video = videoRef.current;
     const canvas = capCanvasRef.current;
     if (!video || !canvas) return;
-
+    if (isCapturing) return;
     setIsCapturing(true);
 
     // compute target size (keep 280:340 ratio)
@@ -395,6 +401,7 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
     setTimeout(() => setIsCapturing(false), 480);
     // reset hints
     setHintReady(false);
+    setCountdown(null);
     stableStartRef.current = null;
   };
 
