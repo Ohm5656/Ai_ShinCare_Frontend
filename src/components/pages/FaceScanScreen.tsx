@@ -311,7 +311,7 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
     if (currentStep === 'analyzing') return;
     const lm = res.multiFaceLandmarks?.[0];
 
-    // ❌ ถ้าไม่มีหน้าเลย → รีเซ็ตทั้งหมด
+    // ❌ ถ้าไม่มีหน้าเลย → รีเซ็ต
     if (!lm) {
       stableStartRef.current = null;
       setHintReady(false);
@@ -319,41 +319,56 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
       return;
     }
 
-    // 1️⃣ คำนวณ yaw + smoothing
+    // 1️⃣ ===== คำนวณมุม yaw (หันซ้าย/ขวา/ตรง) =====
     const yawRaw = estimateYawDeg(lm);
-    const prev = emaYawRef.current || yawRaw;
-    const yaw = EMA_ALPHA * yawRaw + (1 - EMA_ALPHA) * prev;
+    const prevYaw = emaYawRef.current || yawRaw;
+    const yaw = EMA_ALPHA * yawRaw + (1 - EMA_ALPHA) * prevYaw;
     emaYawRef.current = yaw;
 
-    // ตรวจมุม
-    const ok = isYawOk(currentStep, yaw);
-    const near = isYawOkLoose(currentStep, yaw);
+    // ตรวจว่ามุมตอนนี้ถูกไหม
+    const okYaw = isYawOk(currentStep, yaw);
+    const nearYaw = isYawOkLoose(currentStep, yaw);
 
-    // 🧠 พารามิเตอร์สำหรับความนิ่ง (1 วิ)
+    // 2️⃣ ===== ตรวจตำแหน่งใบหน้าในกรอบ (ใช้จมูก) =====
+    const nose = lm[1]; // nose tip landmark
+    const xCenter = Math.abs(nose.x - 0.5);
+    const yCenter = Math.abs(nose.y - 0.5);
+    const TOL = 0.12; // ความกว้างกรอบที่ยอมให้เบี่ยงได้ 12%
+    const centered = xCenter < TOL && yCenter < TOL;
+
+    // 3️⃣ ===== เงื่อนไขรวม (Hybrid) =====
+    // - ต้องหันหน้าถูกมุม (okYaw)
+    // - และใบหน้าอยู่ในกรอบกลาง (centered)
+    const faceOk = okYaw && centered;
+    const faceNear = nearYaw && (xCenter < TOL * 1.3 && yCenter < TOL * 1.3);
+
+    // 4️⃣ ===== ตรวจจับความนิ่ง (stability window) =====
     const now = performance.now();
-    const prevStableStart = stableStartRef.current;
 
-    if (ok) {
-      // ถ้ามุมถูกต้อง → เริ่มจับเวลา
-      if (!prevStableStart) stableStartRef.current = now;
-      const stableFor = now - (stableStartRef.current ?? now);
+    if (faceOk) {
+      // เริ่มจับเวลาเมื่อตรงมุมและอยู่ในกรอบ
+      if (stableStartRef.current == null) stableStartRef.current = now;
 
-      // อยู่ในมุมถูกเกิน 1 วิ + ยังไม่มี countdown → เริ่มนับ
+      const stableFor = now - stableStartRef.current;
+
+      // ถ้านิ่งเกิน 1 วิและยังไม่มี countdown → เริ่มนับ
       if (stableFor >= STABLE_MS && countdown == null) {
         setHintReady(true);
         setCountdown(COUNTDOWN_SEC);
       }
-    } else if (near) {
-      // 🟡 ถ้ามุมใกล้เคียงแต่ไม่ตรงเป๊ะ → ยังคงจับเวลาต่อ
-      // (ไม่รีเซ็ต countdown)
+    } 
+    else if (faceNear) {
+      // 🟡 ถ้าใกล้ถูกมุม ให้โชว์กรอบ dash (แต่ยังไม่นับ)
       setHintReady(false);
-    } else {
-      // 🔴 ถ้ามุมหลุดมากจริง ๆ ค่อยรีเซ็ต
+    } 
+    else {
+      // 🔴 ออกนอกกรอบหรือหันผิดมุม รีเซ็ตใหม่
       stableStartRef.current = null;
       setHintReady(false);
       if (countdown == null) setCountdown(null);
     }
   };
+
 
 
   // -----------------------------------------------------------
