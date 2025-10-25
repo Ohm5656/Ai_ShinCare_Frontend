@@ -10,10 +10,14 @@ import { HistoryPage } from './components/pages/HistoryPage';
 import { EditProfilePage, ProfileData } from './components/pages/EditProfilePage';
 import { ScanDetailPage, ScanDetail } from './components/pages/ScanDetailPage';
 import { ChangePasswordPage } from './components/pages/ChangePasswordPage';
+import { AllScansPage } from './components/pages/AllScansPage';
+import { GalleryPage } from './components/pages/GalleryPage';
+import { PremiumPage } from './components/pages/PremiumPage';
 import { BottomNavSkin } from './components/BottomNavSkin';
 import { Toaster } from './components/ui/sonner';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { UserProvider, useUser } from './contexts/UserContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Screen types for routing
 type Screen = 
@@ -27,7 +31,10 @@ type Screen =
   | 'profile' 
   | 'editProfile'
   | 'scanDetail'
-  | 'changePassword';
+  | 'changePassword'
+  | 'allScans'
+  | 'gallery'
+  | 'premium';
 
 /**
  * App Content Component
@@ -47,6 +54,8 @@ function AppContent() {
   const profileData: ProfileData = useMemo(() => ({
     fullName: user?.fullName || 'Suda Malai',
     email: user?.email || 'suda.malai@email.com',
+    username: user?.username || 'sudamalai',
+    profileImage: user?.profileImage || '',
     age: user?.age || '28',
     gender: user?.gender || 'female',
     skinType: user?.skinType || 'combination',
@@ -123,7 +132,13 @@ function AppContent() {
 
   // Selected scan for detail view
   const [selectedScanId, setSelectedScanId] = useState<number | null>(null);
+  
+  // Selected date range for gallery filter
+  const [galleryDateRange, setGalleryDateRange] = useState<string | undefined>(undefined);
 
+  // Track which screen opened the scan detail page
+  const [previousScreen, setPreviousScreen] = useState<Screen>('history');
+  
   /**
    * Handle user login
    * Transitions from login screen to home dashboard
@@ -147,16 +162,38 @@ function AppContent() {
    */
   const handleProfileSave = (data: ProfileData) => {
     console.log('Profile data saved:', data);
-    // Update user context
-    setUser({
-      fullName: data.fullName,
-      email: data.email,
-      age: data.age,
-      gender: data.gender,
-      skinType: data.skinType,
-      skincareGoal: data.skincareGoal,
-    });
-    setCurrentScreen('profile');
+    
+    // Update user context using updateUser to prevent infinite loops
+    if (user) {
+      setUser({
+        ...user,
+        fullName: data.fullName,
+        email: data.email,
+        username: data.username,
+        profileImage: data.profileImage,
+        age: data.age,
+        gender: data.gender,
+        skinType: data.skinType,
+        skincareGoal: data.skincareGoal,
+      });
+    } else {
+      // If no user exists yet, create new user
+      setUser({
+        fullName: data.fullName,
+        email: data.email,
+        username: data.username,
+        profileImage: data.profileImage,
+        age: data.age,
+        gender: data.gender,
+        skinType: data.skinType,
+        skincareGoal: data.skincareGoal,
+      });
+    }
+    
+    // Navigate back to profile after a brief delay to ensure state update completes
+    setTimeout(() => {
+      setCurrentScreen('profile');
+    }, 0);
   };
 
   /**
@@ -236,11 +273,47 @@ function AppContent() {
               userName={profileData.fullName.split(' ')[0]}
               onViewScanDetail={(scanId) => {
                 setSelectedScanId(scanId);
+                setPreviousScreen('history');
                 setCurrentScreen('scanDetail');
+              }}
+              onViewAllScans={() => setCurrentScreen('allScans')}
+              onViewGallery={(dateRange) => {
+                setGalleryDateRange(dateRange);
+                setCurrentScreen('gallery');
               }}
             />
             <BottomNavSkin activeTab="history" onTabChange={handleTabChange} />
           </>
+        );
+
+      // All Scans Screen
+      case 'allScans':
+        return (
+          <AllScansPage
+            onBack={() => setCurrentScreen('history')}
+            onViewScanDetail={(scanId) => {
+              setSelectedScanId(scanId);
+              setPreviousScreen('allScans');
+              setCurrentScreen('scanDetail');
+            }}
+          />
+        );
+
+      // Gallery Screen
+      case 'gallery':
+        return (
+          <GalleryPage
+            onBack={() => {
+              setGalleryDateRange(undefined);
+              setCurrentScreen('history');
+            }}
+            onViewScanDetail={(scanId) => {
+              setSelectedScanId(scanId);
+              setPreviousScreen('gallery');
+              setCurrentScreen('scanDetail');
+            }}
+            filterDateRange={galleryDateRange}
+          />
         );
 
       // Scan Detail Screen
@@ -253,7 +326,7 @@ function AppContent() {
         return (
           <ScanDetailPage
             scanData={selectedScan}
-            onBack={() => setCurrentScreen('history')}
+            onBack={() => setCurrentScreen(previousScreen)}
           />
         );
 
@@ -265,8 +338,10 @@ function AppContent() {
               userName={profileData.fullName} 
               userEmail={profileData.email}
               profileData={profileData}
+              profileImage={profileData.profileImage}
               onEditProfile={() => setCurrentScreen('editProfile')}
               onChangePassword={() => setCurrentScreen('changePassword')}
+              onPremiumClick={() => setCurrentScreen('premium')}
               onLogout={handleLogout}
             />
             <BottomNavSkin activeTab="profile" onTabChange={handleTabChange} />
@@ -289,6 +364,14 @@ function AppContent() {
           <ChangePasswordPage
             onBack={() => setCurrentScreen('profile')}
             onSuccess={() => setCurrentScreen('profile')}
+          />
+        );
+
+      // Premium Membership Screen
+      case 'premium':
+        return (
+          <PremiumPage
+            onBack={() => setCurrentScreen('profile')}
           />
         );
 
@@ -324,14 +407,16 @@ function AppContent() {
 
 /**
  * Main App Component
- * Wraps AppContent with LanguageProvider and UserProvider
+ * Wraps AppContent with LanguageProvider, UserProvider, and ErrorBoundary
  */
 export default function App() {
   return (
-    <LanguageProvider>
-      <UserProvider>
-        <AppContent />
-      </UserProvider>
-    </LanguageProvider>
+    <ErrorBoundary>
+      <LanguageProvider>
+        <UserProvider>
+          <AppContent />
+        </UserProvider>
+      </LanguageProvider>
+    </ErrorBoundary>
   );
 }
