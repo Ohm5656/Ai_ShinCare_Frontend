@@ -10,7 +10,7 @@
   --font-body: 'Prompt', 'Quicksand', -apple-system, sans-serif;
   
   /* Fresh Pastel Color Palette 🎨 */
-  --background: #FFF9FC;
+  --background: #F8FCFF;
   --foreground: #4B4058;
   
   /* Soft Pink Pastel Tones 💗 */
@@ -21,6 +21,7 @@
   --pink-400: #FF99CB;
   --pink-500: #FF7DBD;
   --pink-600: #F061A8;
+  --pink-700: #D64D91;
   
   /* Soft Blue Pastel Tones 💙 */
   --blue-50: #F0F7FF;
@@ -29,6 +30,8 @@
   --blue-300: #A0CBFF;
   --blue-400: #7DB8FF;
   --blue-500: #5AA5FF;
+  --blue-600: #3D92FF;
+  --blue-700: #2080F7;
   
   /* Soft Lavender Pastel Tones 💜 */
   --lavender-50: #F7F5FF;
@@ -37,6 +40,8 @@
   --lavender-300: #CBB8FF;
   --lavender-400: #B79DFF;
   --lavender-500: #A382FF;
+  --lavender-600: #8F67FF;
+  --lavender-700: #7B4DEB;
   
   /* Soft Peach Pastel Tones 🌟 */
   --peach-50: #FFF9F0;
@@ -69,34 +74,34 @@
   --popover: #FFFFFF;
   --popover-foreground: #5A4A42;
   
-  --primary: var(--pink-400);
+  --primary: var(--blue-400);
   --primary-foreground: #FFFFFF;
   
-  --secondary: var(--blue-300);
+  --secondary: var(--pink-300);
   --secondary-foreground: #4B4058;
   
   --accent: var(--lavender-300);
   --accent-foreground: #4B4058;
   
-  --muted: var(--pink-50);
+  --muted: var(--blue-50);
   --muted-foreground: #7A6B88;
   
   --destructive: #FF6B7D;
   --destructive-foreground: #FFFFFF;
   
-  --border: rgba(255, 181, 217, 0.25);
+  --border: rgba(125, 184, 255, 0.25);
   --input: transparent;
-  --input-background: var(--pink-50);
-  --switch-background: var(--pink-200);
+  --input-background: var(--blue-50);
+  --switch-background: var(--blue-200);
   
   --ring: var(--blue-400);
   
   /* Chart Colors - Cute Pastels */
-  --chart-1: var(--pink-400);
-  --chart-2: var(--blue-400);
-  --chart-3: var(--peach-400);
+  --chart-1: var(--blue-400);
+  --chart-2: var(--pink-400);
+  --chart-3: var(--lavender-400);
   --chart-4: var(--mint-400);
-  --chart-5: var(--lavender-400);
+  --chart-5: var(--peach-400);
   
   /* Border Radius - Extra Rounded & Cute */
   --radius-sm: 1rem;
@@ -106,10 +111,10 @@
   --radius-full: 9999px;
   
   /* Shadows - Soft & Fresh */
-  --shadow-sm: 0 2px 8px rgba(255, 153, 203, 0.12);
-  --shadow-md: 0 4px 16px rgba(255, 153, 203, 0.18);
-  --shadow-lg: 0 8px 24px rgba(255, 153, 203, 0.22);
-  --shadow-xl: 0 16px 40px rgba(255, 153, 203, 0.28);
+  --shadow-sm: 0 2px 8px rgba(125, 184, 255, 0.12);
+  --shadow-md: 0 4px 16px rgba(125, 184, 255, 0.18);
+  --shadow-lg: 0 8px 24px rgba(125, 184, 255, 0.22);
+  --shadow-xl: 0 16px 40px rgba(125, 184, 255, 0.28);
   
   /* Font Weights */
   --font-weight-light: 300;
@@ -243,17 +248,17 @@
   }
   
   ::-webkit-scrollbar-track {
-    background: var(--pink-50);
+    background: var(--blue-50);
     border-radius: 10px;
   }
   
   ::-webkit-scrollbar-thumb {
-    background: var(--pink-300);
+    background: var(--blue-300);
     border-radius: 10px;
   }
   
   ::-webkit-scrollbar-thumb:hover {
-    background: var(--pink-400);
+    background: var(--blue-400);
   }
   
   /* Hide scrollbar for horizontal scroll areas */
@@ -370,6 +375,46 @@
     }
   }
   
+  /* Smooth morphing blob animation - CSS only for better performance */
+  @keyframes morphBlob {
+    0%, 100% {
+      transform: scale(1) translate(0, 0) translateZ(0);
+      border-radius: 40%;
+    }
+    25% {
+      transform: scale(1.1) translate(15px, -10px) translateZ(0);
+      border-radius: 48%;
+    }
+    50% {
+      transform: scale(0.95) translate(-10px, 15px) translateZ(0);
+      border-radius: 52%;
+    }
+    75% {
+      transform: scale(1.05) translate(5px, -5px) translateZ(0);
+      border-radius: 45%;
+    }
+  }
+  
+  /* Gentle floating particle animation - CSS only */
+  @keyframes floatParticle {
+    0%, 100% {
+      transform: translateY(0) translateX(0) scale(0.9) rotate(0deg) translateZ(0);
+      opacity: 0.3;
+    }
+    25% {
+      transform: translateY(-25px) translateX(8px) scale(1) rotate(90deg) translateZ(0);
+      opacity: 0.6;
+    }
+    50% {
+      transform: translateY(-50px) translateX(-8px) scale(1.1) rotate(180deg) translateZ(0);
+      opacity: 0.8;
+    }
+    75% {
+      transform: translateY(-25px) translateX(5px) scale(1) rotate(270deg) translateZ(0);
+      opacity: 0.5;
+    }
+  }
+  
   /* Fresh pastel gradient backgrounds */
   .bg-gradient-cute-pink {
     background: linear-gradient(135deg, var(--pink-100) 0%, var(--pink-200) 100%);
@@ -385,9 +430,9 @@
   
   .bg-gradient-cute-rainbow {
     background: linear-gradient(135deg, 
-      var(--pink-100) 0%, 
+      var(--blue-100) 0%, 
       var(--lavender-100) 25%, 
-      var(--blue-100) 50%, 
+      var(--pink-100) 50%, 
       var(--mint-100) 75%, 
       var(--peach-100) 100%
     );

@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { ArrowLeft, Calendar, TrendingUp, Sparkles, CheckCircle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Calendar, TrendingUp, Sparkles, CheckCircle, AlertCircle, Waves, Flame, Palette, Droplets, Moon, CircleDot } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 import { Badge } from '../ui/badge';
@@ -44,42 +44,42 @@ export function ScanDetailPage({ scanData, onBack }: ScanDetailPageProps) {
     {
       label: t.wrinkles,
       value: scanData.metrics.wrinkles,
-      emoji: '〰️',
+      icon: Waves,
       color: 'mint',
       status: scanData.metrics.wrinkles >= 80 ? t.good : scanData.metrics.wrinkles >= 60 ? t.normal : t.needsImprovement
     },
     {
       label: t.redness,
       value: scanData.metrics.redness,
-      emoji: '🔴',
+      icon: Flame,
       color: 'pink',
       status: scanData.metrics.redness >= 80 ? t.good : scanData.metrics.redness >= 60 ? t.normal : t.needsImprovement
     },
     {
       label: t.skinTone,
       value: scanData.metrics.tone,
-      emoji: '🎨',
+      icon: Palette,
       color: 'peach',
       status: scanData.metrics.tone >= 80 ? t.veryGoodStatus : scanData.metrics.tone >= 60 ? t.normal : t.needsImprovement
     },
     {
       label: t.oiliness,
       value: scanData.metrics.oil,
-      emoji: '💧',
+      icon: Droplets,
       color: 'blue',
       status: scanData.metrics.oil >= 80 ? t.good : scanData.metrics.oil >= 60 ? t.fairStatus : t.needsImprovement
     },
     {
       label: t.eyeBags,
       value: scanData.metrics.eyeBags,
-      emoji: '👁️',
+      icon: Moon,
       color: 'lavender',
       status: scanData.metrics.eyeBags >= 80 ? t.good : scanData.metrics.eyeBags >= 60 ? t.normal : t.needsImprovement
     },
     {
       label: t.acne,
       value: scanData.metrics.acne,
-      emoji: '⚫',
+      icon: CircleDot,
       color: 'purple',
       status: scanData.metrics.acne >= 80 ? t.good : scanData.metrics.acne >= 60 ? t.normal : t.needsImprovement
     },
@@ -242,8 +242,8 @@ export function ScanDetailPage({ scanData, onBack }: ScanDetailPageProps) {
                   <Card className="bg-white rounded-[24px] p-4 shadow-cute-md border border-pink-100/50 hover:shadow-cute-lg transition-shadow">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
-                        <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${colors.gradient} flex items-center justify-center shadow-cute-sm text-2xl`}>
-                          {metric.emoji}
+                        <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${colors.gradient} flex items-center justify-center shadow-cute-sm`}>
+                          <metric.icon className="w-6 h-6 text-white" />
                         </div>
                         <div>
                           <div className="text-gray-800 font-medium">{metric.label}</div>

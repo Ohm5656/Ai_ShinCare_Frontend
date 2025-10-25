@@ -1,14 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, Mic, Plus, Sparkles } from 'lucide-react';
+import { Send, Plus, Sparkles, Image as ImageIcon } from 'lucide-react';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { FloatingParticles } from '../animations/FloatingParticles';
 
 interface Message {
   id: number;
   text: string;
   sender: 'user' | 'ai';
   timestamp: Date;
+  image?: string;
 }
 
 interface DrSkinAIChatScreenProps {
@@ -27,7 +29,10 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
   ]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [showSendEffect, setShowSendEffect] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const quickReplies = [
     t.recommendProducts,
@@ -43,19 +48,36 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
     scrollToBottom();
   }, [messages]);
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSelectedImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSendMessage = () => {
-    if (!inputMessage.trim()) return;
+    if (!inputMessage.trim() && !selectedImage) return;
 
     const newUserMessage: Message = {
       id: messages.length + 1,
-      text: inputMessage,
+      text: inputMessage || (selectedImage ? t.language === 'th' ? 'ส่งรูปภาพ' : t.language === 'en' ? 'Sent an image' : '发送了图片' : ''),
       sender: 'user',
       timestamp: new Date(),
+      image: selectedImage || undefined,
     };
 
     setMessages((prev) => [...prev, newUserMessage]);
     setInputMessage('');
+    setSelectedImage(null);
     setIsTyping(true);
+    
+    // Show send effect
+    setShowSendEffect(true);
+    setTimeout(() => setShowSendEffect(false), 1000);
 
     // Simulate AI response
     setTimeout(() => {
@@ -92,7 +114,15 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50/50 via-lavender-50/30 to-blue-50/50 flex flex-col relative overflow-hidden pb-24">
+      {/* Simplified Particles - Reduce count */}
+      <FloatingParticles 
+        count={3}
+        emojis={['💬', '✨']}
+        useEmojis={true}
+        containerClass="z-0"
+      />
+
       {/* Top App Bar */}
       <div className="bg-white border-b border-pink-100 px-5 py-4 shadow-sm">
         <div className="flex items-center gap-3">
@@ -118,7 +148,13 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
               key={message.id}
               initial={{ opacity: 0, y: 10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ delay: index * 0.1, type: 'spring', stiffness: 200, damping: 20 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ 
+                delay: index * 0.05, 
+                type: 'spring', 
+                stiffness: 300,
+                damping: 25
+              }}
               className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div className={`flex items-end gap-2 max-w-[85%] ${message.sender === 'user' ? 'flex-row-reverse' : ''}`}>
@@ -135,7 +171,16 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
                       : 'bg-gradient-to-br from-lavender-50 to-pink-50/50 text-gray-800 rounded-bl-md'
                   }`}
                 >
-                  <p className="whitespace-pre-wrap leading-relaxed text-[15px]">{message.text}</p>
+                  {message.image && (
+                    <img 
+                      src={message.image} 
+                      alt="Uploaded" 
+                      className="rounded-2xl mb-2 max-w-full h-auto max-h-60 object-cover"
+                    />
+                  )}
+                  {message.text && (
+                    <p className="whitespace-pre-wrap leading-relaxed text-[15px]">{message.text}</p>
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -198,7 +243,28 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
       </AnimatePresence>
 
       {/* Bottom Message Input Bar - Modern & Minimal Design */}
-      <div className="fixed bottom-20 left-0 right-0 bg-gradient-to-b from-[#FFF5FA] to-[#FFEAF3] px-5 py-5 shadow-[0_-4px_12px_rgba(0,0,0,0.08)] z-40">
+      <div className="fixed bottom-20 left-0 right-0 bg-gradient-to-b from-[#FFF5FA] to-[#FFEAF3] px-5 py-4 shadow-[0_-4px_12px_rgba(0,0,0,0.08)] z-40">
+        {/* Image Preview */}
+        {selectedImage && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-3 relative inline-block"
+          >
+            <img 
+              src={selectedImage} 
+              alt="Selected" 
+              className="rounded-2xl max-h-32 object-cover shadow-lg"
+            />
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute -top-2 -right-2 w-6 h-6 bg-pink-500 text-white rounded-full flex items-center justify-center hover:bg-pink-600 transition-colors shadow-md"
+            >
+              ✕
+            </button>
+          </motion.div>
+        )}
+
         <div 
           className="flex items-center gap-3 bg-white rounded-[24px] px-4 py-3 shadow-[0_2px_16px_rgba(0,0,0,0.08)]"
           style={{
@@ -206,8 +272,18 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
           }}
         >
           {/* Add Photo/Attachment Button */}
-          <button className="w-9 h-9 rounded-full border-2 border-pink-200 flex items-center justify-center hover:bg-pink-50 transition-colors flex-shrink-0">
-            <Plus className="w-5 h-5 text-pink-400" strokeWidth={2.5} />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            className="hidden"
+          />
+          <button 
+            onClick={() => fileInputRef.current?.click()}
+            className="w-9 h-9 rounded-full border-2 border-pink-200 flex items-center justify-center hover:bg-pink-50 transition-colors flex-shrink-0"
+          >
+            <ImageIcon className="w-5 h-5 text-pink-400" strokeWidth={2.5} />
           </button>
 
           {/* Text Input Field */}
@@ -216,33 +292,30 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
               type="text"
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
               placeholder={t.typeYourMessage}
               className="w-full bg-transparent border-none outline-none text-gray-800 placeholder:text-[#B0B0B0] text-[15px]"
               style={{ fontFamily: "'Prompt', 'Inter', sans-serif" }}
             />
           </div>
 
-          {/* Right Icons: Microphone & Send */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {/* Microphone Button */}
-            <button className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-pink-50 transition-colors">
-              <Mic className="w-5 h-5 text-gray-400" strokeWidth={2} />
-            </button>
-
-            {/* Send Button */}
-            <button
-              onClick={handleSendMessage}
-              disabled={!inputMessage.trim()}
-              className="w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{
-                background: inputMessage.trim() ? '#FF4FA3' : '#FFB3D9',
-                boxShadow: inputMessage.trim() ? '0 4px 12px rgba(255, 79, 163, 0.3)' : 'none'
-              }}
-            >
-              <Send className="w-5 h-5 text-white" strokeWidth={2.5} />
-            </button>
-          </div>
+          {/* Send Button */}
+          <button
+            onClick={handleSendMessage}
+            disabled={!inputMessage.trim() && !selectedImage}
+            className="w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+            style={{
+              background: (inputMessage.trim() || selectedImage) ? '#FF4FA3' : '#FFB3D9',
+              boxShadow: (inputMessage.trim() || selectedImage) ? '0 4px 12px rgba(255, 79, 163, 0.3)' : 'none'
+            }}
+          >
+            <Send className="w-5 h-5 text-white" strokeWidth={2.5} />
+          </button>
         </div>
       </div>
     </div>

@@ -2,7 +2,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
 import { 
   TrendingUp, Calendar, Award, ChevronRight, 
-  Image as ImageIcon, Sparkles
+  Image as ImageIcon, Sparkles, Waves, Flame, 
+  Palette, Droplets, Moon, CircleDot
 } from 'lucide-react';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
@@ -13,11 +14,13 @@ import { useLanguage } from '../../contexts/LanguageContext';
 interface HistoryPageProps {
   userName?: string;
   onViewScanDetail?: (scanId: number) => void;
+  onViewAllScans?: () => void;
+  onViewGallery?: (dateRange?: string) => void;
 }
 
 type Timeframe = '7days' | '15days' | '30days';
 
-export function HistoryPage({ userName = 'Suda', onViewScanDetail }: HistoryPageProps) {
+export function HistoryPage({ userName = 'Suda', onViewScanDetail, onViewAllScans, onViewGallery }: HistoryPageProps) {
   const { t } = useLanguage();
   const [selectedMetric, setSelectedMetric] = useState('overall');
   const [selectedTimeframe, setSelectedTimeframe] = useState<Timeframe>('7days');
@@ -82,13 +85,13 @@ export function HistoryPage({ userName = 'Suda', onViewScanDetail }: HistoryPage
   ];
 
   const metrics = [
-    { id: 'overall', label: t.overview, emoji: '📊', color: '#FF99CB', gradient: 'from-pink-400 to-pink-500' },
-    { id: 'wrinkles', label: t.wrinkles, emoji: '〰️', color: '#73FFA3', gradient: 'from-mint-400 to-mint-500' },
-    { id: 'redness', label: t.redness, emoji: '🔴', color: '#FFB5D9', gradient: 'from-pink-300 to-pink-400' },
-    { id: 'tone', label: t.skinTone, emoji: '🎨', color: '#FFB350', gradient: 'from-peach-400 to-peach-500' },
-    { id: 'oil', label: t.oiliness, emoji: '💧', color: '#7DB8FF', gradient: 'from-blue-400 to-blue-500' },
-    { id: 'eyeBags', label: t.eyeBags, emoji: '👁️', color: '#CBB8FF', gradient: 'from-lavender-400 to-lavender-500' },
-    { id: 'acne', label: t.acne, emoji: '⚫', color: '#B79DFF', gradient: 'from-lavender-300 to-lavender-400' },
+    { id: 'overall', label: t.overview, icon: TrendingUp, color: '#FF99CB', gradient: 'from-pink-400 to-pink-500' },
+    { id: 'wrinkles', label: t.wrinkles, icon: Waves, color: '#73FFA3', gradient: 'from-mint-400 to-mint-500' },
+    { id: 'redness', label: t.redness, icon: Flame, color: '#FFB5D9', gradient: 'from-pink-300 to-pink-400' },
+    { id: 'tone', label: t.skinTone, icon: Palette, color: '#FFB350', gradient: 'from-peach-400 to-peach-500' },
+    { id: 'oil', label: t.oiliness, icon: Droplets, color: '#7DB8FF', gradient: 'from-blue-400 to-blue-500' },
+    { id: 'eyeBags', label: t.eyeBags, icon: Moon, color: '#CBB8FF', gradient: 'from-lavender-400 to-lavender-500' },
+    { id: 'acne', label: t.acne, icon: CircleDot, color: '#B79DFF', gradient: 'from-lavender-300 to-lavender-400' },
   ];
 
   const pastScans = [
@@ -181,30 +184,22 @@ export function HistoryPage({ userName = 'Suda', onViewScanDetail }: HistoryPage
             {/* Decorative gradient overlay - Removed blur for performance */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-pink-100/50 to-transparent rounded-full"></div>
             
-            <div className="grid grid-cols-3 gap-4 relative z-10">
+            <div className="grid grid-cols-4 gap-3 relative z-10">
               <div className="text-center">
-                <div className="text-3xl bg-gradient-to-br from-pink-500 to-pink-600 bg-clip-text text-transparent mb-1 font-semibold">87</div>
+                <div className="text-3xl bg-gradient-to-br from-blue-500 to-blue-600 bg-clip-text text-transparent mb-1 font-semibold">12</div>
+                <p className="text-xs text-gray-500">{t.totalScans}</p>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl bg-gradient-to-br from-pink-500 to-pink-600 bg-clip-text text-transparent mb-1 font-semibold">79</div>
                 <p className="text-xs text-gray-500">{t.averageScore}</p>
               </div>
-              <div className="text-center border-x border-pink-100">
-                <div className="text-3xl bg-gradient-to-br from-blue-500 to-lavender-500 bg-clip-text text-transparent mb-1 font-semibold">+{currentTimeframe?.improvement}</div>
-                <p className="text-xs text-gray-500">{currentTimeframe?.description}</p>
+              <div className="text-center">
+                <div className="text-3xl bg-gradient-to-br from-lavender-500 to-purple-600 bg-clip-text text-transparent mb-1 font-semibold">87</div>
+                <p className="text-xs text-gray-500">{t.latestScore}</p>
               </div>
               <div className="text-center">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <Award className="w-6 h-6 text-pink-500" fill="currentColor" />
-                </div>
-                <p className="text-xs text-gray-500">{t.skinTone}</p>
-                <p className="text-xs text-pink-600 font-medium">{t.bestMetric} ✨</p>
-              </div>
-            </div>
-
-            <div className="mt-5 pt-5 border-t border-pink-100 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-100 to-lavender-100 flex items-center justify-center">
-                  <Calendar className="w-4 h-4 text-pink-600" />
-                </div>
-                <p className="text-sm text-gray-600">{t.latestScan}: <span className="font-medium text-pink-600">{t.today} 9:30 {t.am}</span></p>
+                <div className="text-3xl bg-gradient-to-br from-mint-500 to-mint-600 bg-clip-text text-transparent mb-1 font-semibold">+{currentTimeframe?.improvement}</div>
+                <p className="text-xs text-gray-500">{t.improved}</p>
               </div>
             </div>
           </Card>
@@ -296,10 +291,18 @@ export function HistoryPage({ userName = 'Suda', onViewScanDetail }: HistoryPage
                       ? 'text-white shadow-cute-md scale-105'
                       : 'bg-white text-gray-600 hover:shadow-cute-md hover:scale-102'
                   }`}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={!isActive ? { 
+                    scale: 1.05,
+                    y: -2,
+                    transition: { type: "spring", stiffness: 400, damping: 25 }
+                  } : {}}
+                  whileTap={{ 
+                    scale: 0.95,
+                    transition: { type: "spring", stiffness: 400, damping: 15 }
+                  }}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2 + index * 0.05 }}
+                  transition={{ delay: 0.2 + index * 0.05, type: "spring", stiffness: 150 }}
                 >
                   {isActive && (
                     <motion.div
@@ -308,7 +311,7 @@ export function HistoryPage({ userName = 'Suda', onViewScanDetail }: HistoryPage
                       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                     />
                   )}
-                  <span className="relative z-10">{metric.emoji}</span>
+                  <metric.icon className="w-4 h-4 relative z-10" />
                   <span className="text-sm relative z-10 font-medium">{metric.label}</span>
                 </motion.button>
               );
@@ -422,7 +425,11 @@ export function HistoryPage({ userName = 'Suda', onViewScanDetail }: HistoryPage
                 <span>{t.scanHistory}</span>
                 <span className="text-lg">📝</span>
               </h4>
-              <Button variant="ghost" className="text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-full px-4">
+              <Button 
+                variant="ghost" 
+                className="text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-full px-4"
+                onClick={onViewAllScans}
+              >
                 {t.viewAll}
               </Button>
             </div>
@@ -433,15 +440,33 @@ export function HistoryPage({ userName = 'Suda', onViewScanDetail }: HistoryPage
                   key={scan.id}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.4 + index * 0.05 }}
+                  transition={{ 
+                    delay: 0.4 + index * 0.08,
+                    type: "spring",
+                    stiffness: 150,
+                    damping: 20
+                  }}
+                  whileHover={{ 
+                    scale: 1.02,
+                    x: 4,
+                    transition: { type: "spring", stiffness: 400, damping: 25 }
+                  }}
+                  whileTap={{ scale: 0.98 }}
                 >
                   <div 
                     onClick={() => onViewScanDetail?.(scan.id)}
-                    className="flex items-center gap-4 py-3 hover:bg-pink-50/50 rounded-2xl px-2 -mx-2 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                    className="flex items-center gap-4 py-3 hover:bg-pink-50/50 rounded-2xl px-2 -mx-2 transition-colors cursor-pointer"
                   >
-                    <div className="w-14 h-14 rounded-[20px] bg-gradient-to-br from-pink-100 via-lavender-100 to-blue-100 flex items-center justify-center text-2xl shadow-cute-sm">
+                    <motion.div 
+                      className="w-14 h-14 rounded-[20px] bg-gradient-to-br from-pink-100 via-lavender-100 to-blue-100 flex items-center justify-center text-2xl shadow-cute-sm"
+                      whileHover={{ 
+                        rotate: [0, -10, 10, -10, 0],
+                        scale: 1.1,
+                        transition: { duration: 0.5 }
+                      }}
+                    >
                       {scan.thumbnail}
-                    </div>
+                    </motion.div>
                     
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
@@ -495,6 +520,7 @@ export function HistoryPage({ userName = 'Suda', onViewScanDetail }: HistoryPage
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.5 + index * 0.05 }}
+                  onClick={() => onViewGallery?.(item.date)}
                   className="bg-white/90 rounded-[24px] p-4 flex items-center justify-between hover:bg-white hover:shadow-cute-md transition-all cursor-pointer"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -519,6 +545,7 @@ export function HistoryPage({ userName = 'Suda', onViewScanDetail }: HistoryPage
             <Button 
               variant="outline" 
               className="w-full mt-4 border-lavender-300 text-lavender-700 hover:bg-white/80 rounded-[20px] h-12 font-semibold bg-white/80 shadow-cute-sm"
+              onClick={() => onViewGallery?.()}
             >
               <ImageIcon className="w-4 h-4 mr-2" />
               {t.viewAllGallery}

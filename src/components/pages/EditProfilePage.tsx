@@ -4,7 +4,7 @@ import {
   ArrowLeft, Camera, User, Mail, Calendar, 
   Sparkles, Target, Check
 } from 'lucide-react';
-import { useLanguage } from '../../contexts/LanguageContext';
+import { useLanguage, Language } from '../../contexts/LanguageContext';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -27,6 +27,8 @@ interface EditProfilePageProps {
 export interface ProfileData {
   fullName: string;
   email: string;
+  username?: string;
+  profileImage?: string;
   age: string;
   gender: string;
   skinType: string;
@@ -34,11 +36,13 @@ export interface ProfileData {
 }
 
 export function EditProfilePage({ onBack, onSave, initialData }: EditProfilePageProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [formData, setFormData] = useState<ProfileData>(
     initialData || {
       fullName: 'Suda Malai',
       email: 'suda.malai@email.com',
+      username: 'sudamalai',
+      profileImage: '',
       age: '28',
       gender: 'female',
       skinType: 'combination',
@@ -47,9 +51,33 @@ export function EditProfilePage({ onBack, onSave, initialData }: EditProfilePage
   );
 
   const [hasChanges, setHasChanges] = useState(false);
+  const [profileImage, setProfileImage] = useState<string | null>(initialData?.profileImage || null);
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleChange = (field: keyof ProfileData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    setHasChanges(true);
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setProfileImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfileImage(reader.result as string);
+        setFormData((prev) => ({ ...prev, profileImage: reader.result as string }));
+        setHasChanges(true);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setProfileImage(null);
+    setProfileImageFile(null);
+    setFormData((prev) => ({ ...prev, profileImage: '' }));
     setHasChanges(true);
   };
 
@@ -67,13 +95,23 @@ export function EditProfilePage({ onBack, onSave, initialData }: EditProfilePage
   const genderColor = getGenderIconColor();
 
   const handleSave = () => {
-    if (onSave) {
-      onSave(formData);
-    }
-    onBack();
+    // Prevent multiple saves
+    if (isSaving) return;
+    
+    setIsSaving(true);
+    
+    // Use setTimeout to prevent blocking
+    setTimeout(() => {
+      if (onSave) {
+        onSave(formData);
+      }
+      setIsSaving(false);
+      // Don't call onBack() here - let the parent component handle navigation
+    }, 100);
   };
 
   const handleCancel = () => {
+    if (isSaving) return;
     onBack();
   };
 
@@ -104,17 +142,38 @@ export function EditProfilePage({ onBack, onSave, initialData }: EditProfilePage
             <div className="flex flex-col items-center">
               <div className="relative mb-4">
                 <Avatar className="w-24 h-24 border-4 border-pink-100">
-                  <AvatarFallback className="bg-gradient-to-br from-pink-200 to-blue-200 text-pink-700">
-                    <User className="w-12 h-12" />
-                  </AvatarFallback>
+                  {profileImage ? (
+                    <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <AvatarFallback className="bg-gradient-to-br from-pink-200 to-blue-200 text-pink-700">
+                      <User className="w-12 h-12" />
+                    </AvatarFallback>
+                  )}
                 </Avatar>
-                <button className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-pink-600 flex items-center justify-center shadow-lg hover:bg-pink-700 transition-colors">
+                <label htmlFor="profile-upload" className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-pink-600 flex items-center justify-center shadow-lg hover:bg-pink-700 transition-colors cursor-pointer">
                   <Camera className="w-5 h-5 text-white" />
-                </button>
+                  <input
+                    id="profile-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                </label>
               </div>
+              {profileImage && (
+                <Button
+                  variant="outline"
+                  className="border-red-200 text-red-600 hover:bg-red-50 mb-2"
+                  onClick={handleRemoveImage}
+                >
+                  {t.removePhoto || 'Remove Photo'}
+                </Button>
+              )}
               <Button
                 variant="outline"
                 className="border-pink-200 text-pink-700 hover:bg-pink-50"
+                onClick={() => document.getElementById('profile-upload')?.click()}
               >
                 <Camera className="w-4 h-4 mr-2" />
                 {t.changePhoto}
@@ -163,6 +222,25 @@ export function EditProfilePage({ onBack, onSave, initialData }: EditProfilePage
                   className="rounded-2xl border-gray-200 bg-gray-50 focus:bg-white focus:border-pink-300"
                   placeholder={t.enterEmail}
                 />
+              </div>
+
+              {/* Username */}
+              <div>
+                <Label htmlFor="username" className="text-gray-700 mb-2 flex items-center gap-2">
+                  <User className="w-4 h-4 text-blue-600" />
+                  {t.username || 'Username'}
+                </Label>
+                <Input
+                  id="username"
+                  type="text"
+                  value={formData.username || ''}
+                  onChange={(e) => handleChange('username', e.target.value.toLowerCase().replace(/\s/g, ''))}
+                  className="rounded-2xl border-gray-200 bg-gray-50 focus:bg-white focus:border-blue-300"
+                  placeholder={t.enterUsername || 'Enter username'}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {t.usernameHint || 'Use this to login instead of email'}
+                </p>
               </div>
 
               {/* Age */}

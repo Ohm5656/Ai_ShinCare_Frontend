@@ -4,6 +4,8 @@ import { createContext, useContext, useState, useMemo, useCallback, ReactNode } 
 export interface UserData {
   email: string;
   fullName: string;
+  username?: string;
+  profileImage?: string;
   age?: string;
   gender?: string;
   skinType?: string;

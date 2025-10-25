@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Camera, Sparkles, Heart, BarChart3, CircleDot } from 'lucide-react';
+import { Camera, Sparkles, Heart, BarChart3, CircleDot, Waves, Flame, Palette, Droplets, Moon } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { FloatingParticles } from '../animations/FloatingParticles';
 
 interface SkinHomeDashboardProps {
   userName?: string;
@@ -18,7 +19,7 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
 
   const quickStats = [
     {
-      emoji: '〰️',
+      icon: Waves,
       label: t.wrinkles,
       score: 85,
       status: t.good,
@@ -27,7 +28,7 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
       iconColor: 'text-mint-600',
     },
     {
-      emoji: '🔴',
+      icon: Flame,
       label: t.redness,
       score: 72,
       status: t.normal,
@@ -36,7 +37,7 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
       iconColor: 'text-pink-600',
     },
     {
-      emoji: '🎨',
+      icon: Palette,
       label: t.skinTone,
       score: 88,
       status: t.veryGood,
@@ -45,7 +46,7 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
       iconColor: 'text-peach-600',
     },
     {
-      emoji: '💧',
+      icon: Droplets,
       label: t.oiliness,
       score: 65,
       status: t.fair,
@@ -54,7 +55,7 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
       iconColor: 'text-blue-600',
     },
     {
-      emoji: '👁️',
+      icon: Moon,
       label: t.eyeBags,
       score: 78,
       status: t.normal,
@@ -63,7 +64,7 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
       iconColor: 'text-lavender-600',
     },
     {
-      emoji: '⚫',
+      icon: CircleDot,
       label: t.acne,
       score: 82,
       status: t.good,
@@ -85,12 +86,12 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-lavender-50 to-blue-50 pb-28 relative overflow-hidden">
-      {/* Cute floating decorations - Simplified for performance */}
-      <div className="absolute top-20 right-10 text-pink-200 opacity-30">
+      {/* Simplified decorations - Remove heavy animations */}
+      <div className="absolute top-20 right-10 text-pink-200/50 pointer-events-none">
         <Heart className="w-16 h-16" fill="currentColor" />
       </div>
 
-      <div className="absolute top-40 left-8 text-blue-200 opacity-20">
+      <div className="absolute top-40 left-8 text-blue-200/40 pointer-events-none">
         <Sparkles className="w-12 h-12" />
       </div>
 
@@ -276,31 +277,68 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.4 + index * 0.1, duration: 0.5 }}
-            className="bg-white rounded-[24px] p-5 shadow-cute-md border border-pink-100/50 hover:shadow-cute-lg hover:scale-[1.02] transition-all duration-300"
+            whileHover={{ 
+              scale: 1.03,
+              y: -4,
+              transition: { type: "spring", stiffness: 400, damping: 25 }
+            }}
+            whileTap={{ scale: 0.98 }}
+            className="bg-white rounded-[24px] p-5 shadow-cute-md border border-pink-100/50 hover:shadow-cute-lg transition-shadow duration-300 cursor-pointer"
           >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
-                <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${stat.gradient} flex items-center justify-center shadow-cute-sm text-2xl`}>
-                  {stat.emoji}
-                </div>
+                <motion.div 
+                  className={`w-12 h-12 rounded-full bg-gradient-to-br ${stat.gradient} flex items-center justify-center shadow-cute-sm`}
+                  whileHover={{ 
+                    scale: 1.15,
+                    rotate: [0, -10, 10, -10, 0],
+                    transition: { duration: 0.5 }
+                  }}
+                >
+                  <stat.icon className="w-6 h-6 text-white" />
+                </motion.div>
                 <div>
                   <div className="text-gray-800 text-sm font-medium">{stat.label}</div>
-                  <span className={`inline-block px-3 py-1 rounded-full text-xs mt-1 ${stat.color} font-medium`}>
+                  <motion.span 
+                    className={`inline-block px-3 py-1 rounded-full text-xs mt-1 ${stat.color} font-medium`}
+                    whileHover={{ scale: 1.05 }}
+                  >
                     {stat.status}
-                  </span>
+                  </motion.span>
                 </div>
               </div>
-              <div className={`text-2xl font-semibold bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent`}>
+              <motion.div 
+                className={`text-2xl font-semibold bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent`}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ 
+                  delay: 0.6 + index * 0.1, 
+                  type: "spring",
+                  stiffness: 200,
+                  damping: 15
+                }}
+              >
                 {stat.score}
-              </div>
+              </motion.div>
             </div>
             <div className="relative h-2.5 bg-gray-100 rounded-full overflow-hidden">
               <motion.div
-                className={`h-full bg-gradient-to-r ${stat.gradient} rounded-full`}
+                className={`h-full bg-gradient-to-r ${stat.gradient} rounded-full relative`}
                 initial={{ width: 0 }}
                 animate={{ width: `${stat.score}%` }}
                 transition={{ delay: 0.5 + index * 0.1, duration: 0.8, ease: "easeOut" }}
-              />
+              >
+                <motion.div
+                  className="absolute inset-0 bg-white/30"
+                  initial={{ x: "-100%" }}
+                  animate={{ x: "200%" }}
+                  transition={{
+                    duration: 1.5,
+                    delay: 0.8 + index * 0.1,
+                    ease: "easeInOut"
+                  }}
+                />
+              </motion.div>
             </div>
           </motion.div>
         ))}
@@ -313,19 +351,49 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
         transition={{ delay: 0.8, duration: 0.5 }}
         className="px-6 relative z-10"
       >
-        <Button
-          onClick={onStartScan}
-          className="w-full h-16 rounded-[28px] bg-gradient-to-r from-pink-400 via-lavender-400 to-blue-400 hover:from-pink-500 hover:via-lavender-500 hover:to-blue-500 text-white shadow-cute-xl hover:shadow-cute-xl hover:scale-105 transition-all duration-300 text-lg font-semibold relative overflow-hidden group"
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ type: "spring", stiffness: 400, damping: 25 }}
         >
-          <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-          <Camera className="w-6 h-6 mr-2 relative z-10" />
-          <span className="relative z-10">{t.startScan}</span>
-          <Sparkles className="w-5 h-5 ml-2 relative z-10" />
-        </Button>
+          <Button
+            onClick={onStartScan}
+            className="w-full h-16 rounded-[28px] bg-gradient-to-r from-pink-400 via-lavender-400 to-blue-400 hover:from-pink-500 hover:via-lavender-500 hover:to-blue-500 text-white shadow-cute-xl hover:shadow-cute-xl transition-shadow duration-300 text-lg font-semibold relative overflow-hidden group"
+          >
+            <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+            <motion.div
+              className="relative z-10 flex items-center justify-center"
+              whileHover={{ x: [0, -3, 3, -3, 0] }}
+              transition={{ duration: 0.5 }}
+            >
+              <motion.div
+                animate={{ rotate: [0, -10, 10, -10, 0] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <Camera className="w-6 h-6 mr-2" />
+              </motion.div>
+              <span>{t.startScan}</span>
+              <motion.div
+                animate={{ 
+                  scale: [1, 1.2, 1],
+                  rotate: [0, 180, 360]
+                }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <Sparkles className="w-5 h-5 ml-2" />
+              </motion.div>
+            </motion.div>
+          </Button>
+        </motion.div>
         
-        <p className="text-center text-gray-400 text-xs mt-3">
+        <motion.p 
+          className="text-center text-gray-400 text-xs mt-3"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1 }}
+        >
           {t.quickScan}
-        </p>
+        </motion.p>
       </motion.div>
     </div>
   );

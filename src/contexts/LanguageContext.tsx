@@ -110,6 +110,11 @@ export interface Translations {
   gender: string;
   skinType: string;
   skincareGoal: string;
+  username: string;
+  enterUsername: string;
+  usernameHint: string;
+  changePhoto: string;
+  removePhoto: string;
   male: string;
   female: string;
   other: string;
@@ -199,6 +204,7 @@ export interface Translations {
   today: string;
   scansCompleted: string;
   totalScans: string;
+  latestScore: string;
   skinProgress: string;
   improvement: string;
   
@@ -450,6 +456,15 @@ export interface Translations {
   pleaseEnterCurrentPassword: string;
   pleaseEnterNewPassword: string;
   
+  // All Scans Page
+  allScans: string;
+  scans: string;
+  avgScore: string;
+  allTime: string;
+  last3Months: string;
+  noScansFound: string;
+  keepTracking: string;
+  
   // Language property for detecting current language
   language: Language;
 }
@@ -562,6 +577,11 @@ const translations: Record<Language, Translations> = {
     gender: 'เพศ',
     skinType: 'ประเภทผิว',
     skincareGoal: 'เป้าหมายการดูแลผิว',
+    username: 'ชื่อผู้ใช้',
+    enterUsername: 'กรอกชื่อผู้ใช้',
+    usernameHint: 'ใช้สำหรับเข้าสู่ระบบแทนอีเมล',
+    changePhoto: 'เปลี่ยนรูปโปรไฟล์',
+    removePhoto: 'ลบรูปโปรไฟล์',
     male: 'ชาย',
     female: 'หญิง',
     other: 'อื่นๆ',
@@ -651,6 +671,7 @@ const translations: Record<Language, Translations> = {
     today: 'วันนี้',
     scansCompleted: 'สแกนเสร็จสิ้น',
     totalScans: 'การสแกนทั้งหมด',
+    latestScore: 'คะแนนครั้งล่าสุด',
     skinProgress: 'ความก้าวหน้าของผิว',
     improvement: 'การปรับปรุง',
     
@@ -902,6 +923,15 @@ const translations: Record<Language, Translations> = {
     mildRedness: 'ผิวแดงเล็กน้อย',
     chatWithDrSkinAI: 'รับคำแนะนำจาก Dr.SkinAI 💬',
     
+    // All Scans Page
+    allScans: 'รายการสแกนทั้งหมด',
+    scans: 'รายการ',
+    avgScore: 'คะแนนเฉลี่ย',
+    allTime: 'ทั้งหมด',
+    last3Months: '3 เดือนย้อนหลัง',
+    noScansFound: 'ไม่พบรายการสแกน',
+    keepTracking: 'ติดตามต่อไป',
+    
     // Language property
     language: 'th' as Language,
   },
@@ -1011,6 +1041,11 @@ const translations: Record<Language, Translations> = {
     gender: 'Gender',
     skinType: 'Skin Type',
     skincareGoal: 'Skincare Goal',
+    username: 'Username',
+    enterUsername: 'Enter username',
+    usernameHint: 'Use this to login instead of email',
+    changePhoto: 'Change Photo',
+    removePhoto: 'Remove Photo',
     male: 'Male',
     female: 'Female',
     other: 'Other',
@@ -1100,6 +1135,7 @@ const translations: Record<Language, Translations> = {
     today: 'Today',
     scansCompleted: 'Scans Completed',
     totalScans: 'Total Scans',
+    latestScore: 'Latest Score',
     skinProgress: 'Skin Progress',
     improvement: 'Improvement',
     
@@ -1351,6 +1387,15 @@ const translations: Record<Language, Translations> = {
     mildRedness: 'Mild redness',
     chatWithDrSkinAI: 'Get Advice from Dr.SkinAI 💬',
     
+    // All Scans Page
+    allScans: 'All Scans',
+    scans: 'scans',
+    avgScore: 'Avg Score',
+    allTime: 'All Time',
+    last3Months: 'Last 3 Months',
+    noScansFound: 'No scans found',
+    keepTracking: 'Keep Tracking',
+    
     // Language property
     language: 'en' as Language,
   },
@@ -1549,6 +1594,7 @@ const translations: Record<Language, Translations> = {
     today: '今天',
     scansCompleted: '已完成扫描',
     totalScans: '总扫描次数',
+    latestScore: '最新分数',
     skinProgress: '皮肤进步',
     improvement: '改善',
     
@@ -1799,6 +1845,15 @@ const translations: Record<Language, Translations> = {
     goodHydration: '保湿良好',
     mildRedness: '轻微发红',
     chatWithDrSkinAI: '向 Dr.SkinAI 寻求建议 💬',
+    
+    // All Scans Page
+    allScans: '所有扫描',
+    scans: '扫描',
+    avgScore: '平均分数',
+    allTime: '全部时间',
+    last3Months: '最近3个月',
+    noScansFound: '未找到扫描',
+    keepTracking: '继续跟踪',
     
     // Language property
     language: 'zh' as Language,

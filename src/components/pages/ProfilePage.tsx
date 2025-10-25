@@ -34,18 +34,22 @@ interface ProfilePageProps {
   userName?: string;
   userEmail?: string;
   profileData?: ProfileData;
+  profileImage?: string;
   onEditProfile?: () => void;
   onChangePassword?: () => void;
   onLogout?: () => void;
+  onPremiumClick?: () => void;
 }
 
 export function ProfilePage({ 
   userName = 'Suda Malai', 
   userEmail = 'suda.malai@email.com',
   profileData,
+  profileImage,
   onEditProfile,
   onChangePassword,
-  onLogout
+  onLogout,
+  onPremiumClick
 }: ProfilePageProps) {
   const { language, setLanguage, t } = useLanguage();
   const latestSkinScore = 87;
@@ -221,15 +225,28 @@ export function ProfilePage({
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.5 }}
+          transition={{ delay: 0.1, duration: 0.5, type: "spring", stiffness: 150 }}
+          whileHover={{ y: -4, transition: { type: "spring", stiffness: 400, damping: 25 } }}
         >
-          <Card className="bg-white rounded-3xl p-6 shadow-lg border border-pink-100">
+          <Card className="bg-white rounded-3xl p-6 shadow-lg border border-pink-100 hover:shadow-xl transition-shadow">
             <div className="flex items-center gap-4 mb-4">
-              <Avatar className="w-20 h-20 border-4 border-pink-100">
-                <AvatarFallback className="bg-gradient-to-br from-pink-200 to-lavender-200 text-pink-700">
-                  <User className="w-10 h-10" />
-                </AvatarFallback>
-              </Avatar>
+              <motion.div
+                whileHover={{ 
+                  scale: 1.1,
+                  rotate: [0, -5, 5, -5, 0],
+                  transition: { duration: 0.5 }
+                }}
+              >
+                <Avatar className="w-20 h-20 border-4 border-pink-100">
+                  {profileImage ? (
+                    <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <AvatarFallback className="bg-gradient-to-br from-pink-200 to-lavender-200 text-pink-700">
+                      <User className="w-10 h-10" />
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+              </motion.div>
               
               <div className="flex-1">
                 <h3 className="text-gray-800 mb-1">{userName}</h3>
@@ -237,20 +254,32 @@ export function ProfilePage({
                   <Mail className="w-4 h-4 text-pink-400" />
                   <span>{userEmail}</span>
                 </div>
-                <Badge className="bg-pink-100 text-pink-700 border-0">
-                  {t.premiumMember}
-                </Badge>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={onPremiumClick}
+                  className="inline-block"
+                >
+                  <Badge className="bg-pink-100 text-pink-700 border-0 cursor-pointer hover:bg-pink-200 transition-colors">
+                    {t.premiumMember}
+                  </Badge>
+                </motion.button>
               </div>
             </div>
 
-            <Button 
-              variant="outline" 
-              className="w-full border-pink-200 text-pink-700 hover:bg-pink-50"
-              onClick={onEditProfile}
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
-              <Edit2 className="w-4 h-4 mr-2" />
-              {t.editProfile}
-            </Button>
+              <Button 
+                variant="outline" 
+                className="w-full border-pink-200 text-pink-700 hover:bg-pink-50"
+                onClick={onEditProfile}
+              >
+                <Edit2 className="w-4 h-4 mr-2" />
+                {t.editProfile}
+              </Button>
+            </motion.div>
           </Card>
         </motion.div>
 
@@ -317,7 +346,7 @@ export function ProfilePage({
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
+          transition={{ delay: 0.3, duration: 0.5, type: "spring", stiffness: 150 }}
         >
           <Card className="bg-white rounded-3xl p-6 shadow-lg border border-pink-100">
             <h4 className="text-gray-800 mb-4">{t.personalInfo}</h4>
@@ -354,11 +383,28 @@ export function ProfilePage({
                 const currentColor = colorConfig[color as keyof typeof colorConfig] || colorConfig.pink;
                 
                 return (
-                  <div key={index}>
+                  <motion.div 
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ 
+                      delay: 0.4 + index * 0.05,
+                      type: "spring",
+                      stiffness: 150
+                    }}
+                    whileHover={{ x: 4 }}
+                  >
                     <div className="flex items-center gap-3 py-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${currentColor.bg}`}>
+                      <motion.div 
+                        className={`w-10 h-10 rounded-full flex items-center justify-center ${currentColor.bg}`}
+                        whileHover={{ 
+                          scale: 1.15,
+                          rotate: 360,
+                          transition: { duration: 0.6 }
+                        }}
+                      >
                         <Icon className={`w-5 h-5 ${currentColor.text}`} />
-                      </div>
+                      </motion.div>
                       <div className="flex-1">
                         <p className="text-xs text-gray-500">{detail.label}</p>
                         <p className="text-gray-800">{detail.value}</p>
@@ -367,7 +413,7 @@ export function ProfilePage({
                     {index < userDetails.length - 1 && (
                       <Separator className={currentColor.separator} />
                     )}
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>
@@ -391,7 +437,7 @@ export function ProfilePage({
                   <Button
                     key={index}
                     variant={button.variant}
-                    onClick={button.onClick}
+                    onClick={() => button.onClick?.()}
                     className={`w-full justify-start gap-2.5 ${
                       button.danger 
                         ? 'border-red-200 text-red-600 hover:bg-red-50' 

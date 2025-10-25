@@ -82,7 +82,16 @@ export function BottomNavSkin({ activeTab, onTabChange }: BottomNavSkinProps) {
                   className="relative flex flex-col items-center gap-1 w-full py-2 px-1"
                   aria-label={tab.ariaLabel}
                   aria-current={isActive ? 'page' : undefined}
-                  whileTap={{ scale: 0.9 }}
+                  whileTap={{ 
+                    scale: 0.85,
+                    y: 2,
+                    transition: { type: "spring", stiffness: 400, damping: 15 }
+                  }}
+                  whileHover={!isActive ? { 
+                    scale: 1.1,
+                    y: -2,
+                    transition: { type: "spring", stiffness: 400, damping: 25 }
+                  } : {}}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
@@ -130,9 +139,17 @@ export function BottomNavSkin({ activeTab, onTabChange }: BottomNavSkinProps) {
                     )}
                     
                     {/* Icon Container */}
-                    <div className={`relative z-10 w-12 h-12 flex items-center justify-center rounded-[18px] transition-all duration-300 ${
-                      isActive ? 'scale-110' : 'scale-100'
-                    }`}>
+                    <motion.div 
+                      className="relative z-10 w-12 h-12 flex items-center justify-center rounded-[18px]"
+                      animate={isActive ? { 
+                        scale: [1, 1.15, 1.1],
+                        rotate: [0, -5, 5, 0]
+                      } : { scale: 1 }}
+                      transition={isActive ? {
+                        scale: { duration: 0.4, ease: "easeOut" },
+                        rotate: { duration: 0.6, ease: "easeInOut" }
+                      } : {}}
+                    >
                       <Icon
                         className={`w-6 h-6 transition-all duration-300 ${
                           isActive ? 'text-white' : 'text-gray-400'
@@ -140,7 +157,7 @@ export function BottomNavSkin({ activeTab, onTabChange }: BottomNavSkinProps) {
                         strokeWidth={isActive ? 2.5 : 2}
                         aria-hidden="true"
                       />
-                    </div>
+                    </motion.div>
                   </div>
                   
                   {/* Label with emoji */}
