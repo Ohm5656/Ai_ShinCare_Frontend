@@ -19,14 +19,14 @@ import { LaserScanEffect } from "../LaserScanEffect";
 // CONFIG
 // ===================================================================================================
 
-const FRONT_YAW_MAX = 7;
-const SIDE_YAW_MIN = 20;
-const SIDE_YAW_MAX = 60;
+const FRONT_YAW_MAX = 10;   // หน้าตรง ±10°
+const SIDE_YAW_MIN = 15;    // ต้องหันเกิน 35° ถึงจะถือว่าซ้าย/ขวา
+const SIDE_YAW_MAX = 65;
 const HYST_MARGIN = 10.0;
 const CENTER_TOL_X = 0.22;
 const CENTER_TOL_Y = 0.22;
 const STABLE_MS = 1000;
-const EMA_ALPHA = 0.28;
+const EMA_ALPHA = 0.1;
 
 // ===================================================================================================
 // TYPES
@@ -92,14 +92,24 @@ const MemoLaserScanEffect = React.memo(LaserScanEffect);
 // ===================================================================================================
 
 function estimateYawDeg(lm: any[]): number {
-  const L = lm[234], R = lm[454], N = lm[1];
-  if (!L || !R || !N) return 0;
-  const midX = (L.x + R.x) / 2;
-  const w = Math.abs(R.x - L.x) || 1e-6;
-  const dx = N.x - midX;
-  const yawRad = Math.atan2(dx, w);
+  // ใช้จุดตาซ้าย (33), ตาขวา (263), และจมูก (1)
+  const leftEye = lm[33];
+  const rightEye = lm[263];
+  const nose = lm[1];
+
+  if (!leftEye || !rightEye || !nose) return 0;
+
+  // midX คือจุดกึ่งกลางระหว่างดวงตาทั้งสอง
+  const midX = (leftEye.x + rightEye.x) / 2;
+  const faceWidth = Math.abs(rightEye.x - leftEye.x) || 1e-6;
+  const dx = nose.x - midX;
+
+  // คำนวณมุม yaw จากความต่างตำแหน่งจมูกกับกึ่งกลางตา
+  const yawRad = Math.atan2(dx, faceWidth);
   const yawDeg = (yawRad * 180) / Math.PI;
-  return -yawDeg * 1.35;
+
+  // ❗ ต้องใส่เครื่องหมายลบ เพราะภาพ flip แล้ว (scaleX(-1))
+  return -yawDeg * 1.4; // คูณ 1.3 เพื่อชดเชย scale ความกว้างของหน้า
 }
 
 function isYawOk(step: ScanStep, y: number) {
@@ -110,11 +120,12 @@ function isYawOk(step: ScanStep, y: number) {
 }
 
 function isYawNear(step: ScanStep, y: number) {
-  if (step === "front") return Math.abs(y) <= FRONT_YAW_MAX + HYST_MARGIN;
-  if (step === "left") return y <= -(SIDE_YAW_MIN - HYST_MARGIN) && y >= -(SIDE_YAW_MAX + 4);
-  if (step === "right") return y >= SIDE_YAW_MIN - HYST_MARGIN && y <= SIDE_YAW_MAX + 4;
+  if (step === "front") return Math.abs(y) <= FRONT_YAW_MAX + 5;
+  if (step === "left")  return y <= -(SIDE_YAW_MIN - 5) && y >= -(SIDE_YAW_MAX + 5);
+  if (step === "right") return y >= SIDE_YAW_MIN - 5 && y <= SIDE_YAW_MAX + 5;
   return false;
 }
+
 
 function isFaceCentered(nose: { x: number; y: number } | null) {
   if (!nose) return false;
@@ -171,12 +182,19 @@ export function FaceScanScreen({ onAnalyze, onBack }: FaceScanScreenProps) {
 
   // --- Filters / smoothing
   const stableStartRef = useRef<number | null>(null);
+  const countdownLockRef = useRef(false);
   const stableHintStartRef = useRef<{ text: string; time: number } | null>(null);
   const emaYawRef = useRef(0);
   const lastNoseRef = useRef<{ x: number; y: number } | null>(null);
   const hintTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 const isCountingDownRef = useRef(false);
 useEffect(() => { isCountingDownRef.current = isCountingDown; }, [isCountingDown]);
+// ✅ เก็บ currentStep ที่กำลัง active จริง ๆ ป้องกัน onResults ทำงานข้ามมุม
+const activeStepRef = useRef<ScanStep>("front");
+useEffect(() => {
+  activeStepRef.current = currentStep;
+}, [currentStep]);
+
 
 
   // ===================================================================================================
@@ -277,13 +295,14 @@ useEffect(() => { isCountingDownRef.current = isCountingDown; }, [isCountingDown
         });
 
 fm.onResults((res) => {
-  // ❌ ไม่เจอหน้า
+
   if (!res.multiFaceLandmarks?.length) {
     if (isCountingDown) {
       setCountdown(null);
       setBigCount(null);
       setIsCountingDown(false);
     }
+    countdownLockRef.current = false;
     stableStartRef.current = null;
     setIsFaceOkIfChanged(false);
     setFrameColorIfChanged("#FF5555");
@@ -302,10 +321,11 @@ fm.onResults((res) => {
   // คำนวณ yaw แบบ EMA
   const yaw = estimateYawDeg(lm);
   emaYawRef.current = EMA_ALPHA * yaw + (1 - EMA_ALPHA) * emaYawRef.current;
+console.log("Yaw:", emaYawRef.current.toFixed(1), "step:", activeStepRef.current);
 
-  // สีกรอบและสถานะหน้า (ไม่ตัดออก)
-  const ok = inFrameAndAngleOk(currentStep, emaYawRef.current, lastNoseRef.current);
-  const near = !ok && isYawNear(currentStep, emaYawRef.current);
+const ok = inFrameAndAngleOk(activeStepRef.current, emaYawRef.current, lastNoseRef.current);
+const near = !ok && isYawNear(activeStepRef.current, emaYawRef.current);
+
   setFrameColorIfChanged(pickFrameColor(ok, near));
   setIsFaceOkIfChanged(ok);
 
@@ -321,17 +341,18 @@ fm.onResults((res) => {
   else if (cy < -0.18) newHint = "ก้มหน้าลงอีกหน่อย ⬇️";
   else if (!ok) {
 
-    if (currentStep === "left") {
-      newHint =
-        emaYawRef.current > -SIDE_YAW_MIN + 5
-          ? "หันหน้าไปทางซ้ายอีกหน่อย 👈"
-          : "หน้าไม่ตรงมุม โปรดแสกนใหม่ 😅";
-    } else if (currentStep === "right") {
-      newHint =
-        emaYawRef.current < SIDE_YAW_MIN - 5
-          ? "หันหน้าไปทางขวาอีกหน่อย 👉"
-          : "หน้าไม่ตรงมุม โปรดแสกนใหม่ 😅";
-    } else newHint = "มองตรงไปที่กล้อง 👁️";
+if (activeStepRef.current === "left") {
+  newHint =
+    emaYawRef.current > -SIDE_YAW_MIN + 5
+      ? "หันหน้าไปทางซ้ายอีกหน่อย 👈"
+      : "หน้าไม่ตรงมุม โปรดแสกนใหม่ 😅";
+} else if (activeStepRef.current === "right") {
+  newHint =
+    emaYawRef.current < SIDE_YAW_MIN - 5
+      ? "หันหน้าไปทางขวาอีกหน่อย 👉"
+      : "หน้าไม่ตรงมุม โปรดแสกนใหม่ 😅";
+} else newHint = "มองตรงไปที่กล้อง 👁️";
+
   } else {
     newHint = "เยี่ยมเลย! ค้างหน้านิ่งไว้ 😄";
   }
@@ -345,36 +366,51 @@ fm.onResults((res) => {
   setHintTextIfChanged(newHint);
 }
 
+// ✅ Countdown แบบ Stable: ต้องนิ่ง 1 วิ แล้วค่อยเริ่ม 3→2→1
+const isPerfectHint = newHint === "เยี่ยมเลย! ค้างหน้านิ่งไว้ 😄";
+const now = performance.now();
 
-  // ==========================
-  // ✅ Simplified Countdown Logic (พิจารณาเฉพาะ hintText)
-  // ==========================
-  const isPerfectHint = newHint === "เยี่ยมเลย! ค้างหน้านิ่งไว้ 😄";
+if (!isCapturing) {
+  if (isPerfectHint) {
+    // ถ้ายังไม่เคยเริ่มจับเวลาความนิ่ง ให้เริ่มจับตอนนี้
+    if (!stableStartRef.current) stableStartRef.current = now;
 
-  if (!isCapturing) {
-    if (isPerfectHint) {
-      // ✅ ถ้า hint ตรง เริ่มนับทันที
-      if (!isCountingDown && countdown == null) {
-        setIsCountingDown(true);
-        isCountingDownRef.current = true; // ✅ sync ref
-        setCountdown(3);
-        setBigCount(3);
-      }
-    } else {
-      // ❌ ถ้าคำแนะนำเปลี่ยนระหว่างนับ → รีเซ็ตกลับหน้าเดิม
-if (isCountingDownRef.current || countdown != null) {
-  setCountdown(null);
-  setBigCount(null);
-  setIsCountingDown(false);
-  isCountingDownRef.current = false;
-  stableStartRef.current = null;
-  setIsFaceOkIfChanged(false);
-  setFrameColorIfChanged("#FF5555");
-  setHintTextIfChanged("ยื่นหน้าให้อยู่ในกรอบสแกน");
+    // นิ่งต่อเนื่องเกิน 1000ms (1 วิ) แล้ว *ยังไม่เคยเริ่มนับ* และ *ยังไม่ล็อก*
+    if (
+      now - stableStartRef.current > 1000 &&
+      !isCountingDown &&
+      countdown == null &&
+      !countdownLockRef.current
+    ) {
+      // 🔒 ล็อกครั้งนี้ไว้เลย กันเริ่มซ้ำ
+      countdownLockRef.current = true;
+
+      setIsCountingDown(true);
+      isCountingDownRef.current = true;
+      setCountdown(3);
+      setBigCount(3);
+    }
+  } else {
+    // หลุดจาก "เยี่ยมเลย!" → รีเซ็ตทุกอย่าง + ปลดล็อก
+    stableStartRef.current = null;
+
+    if (isCountingDownRef.current || countdown != null) {
+      setCountdown(null);
+      setBigCount(null);
+      setIsCountingDown(false);
+      isCountingDownRef.current = false;
+    }
+
+    // ปลดล็อกเสมอ เพื่อให้เริ่มใหม่ได้เมื่อกลับมานิ่ง
+    countdownLockRef.current = false;
+
+    setIsFaceOkIfChanged(false);
+    setFrameColorIfChanged("#FF5555");
+    setHintTextIfChanged("ยื่นหน้าให้อยู่ในกรอบสแกน");
+  }
 }
 
-    }
-  }
+
 }); // end onResults
 
 
@@ -410,18 +446,25 @@ if (isCountingDownRef.current || countdown != null) {
       faceMeshRef.current?.close?.();
     };
   }, []);
-
-  // ===================================================================================================
-  // Reset state เมื่อเปลี่ยน step
-  // ===================================================================================================
-  useEffect(() => {
+// ===================================================================================================
+// Reset state เมื่อเปลี่ยน step (ให้เฟรมใหม่เริ่มก่อน แล้วค่อยรีเซ็ตทั้งหมด)
+// ===================================================================================================
+useEffect(() => {
+  const timeout = setTimeout(() => {
     stableStartRef.current = null;
+    countdownLockRef.current = false;
+    emaYawRef.current = 0;          // ✅ ล้างมุมเฉลี่ยเก่าด้วย
+    hintTextRef.current = "ยื่นหน้าให้อยู่ในกรอบสแกน";
     setIsCountingDown(false);
     setCountdown(null);
     setBigCount(null);
     setIsFaceOkIfChanged(false);
+    setFrameColorIfChanged("#FF5555");
     setHintTextIfChanged("ยื่นหน้าให้อยู่ในกรอบสแกน");
-  }, [currentStep]);
+  }, 250); // delay 0.25 วินาที
+  return () => clearTimeout(timeout);
+}, [currentStep]);
+
 
   // ===================================================================================================
   // Auto clear blur overlay เมื่อไม่เจอหน้าเกินช่วงเวลาหนึ่ง
@@ -444,13 +487,18 @@ if (isCountingDownRef.current || countdown != null) {
   const doCapture = () => {
     if (isCapturing || !focusVideoRef.current) return;
 
+    // ✅ ใช้ activeStepRef เพื่อให้ได้มุมล่าสุดจริง ๆ (ไม่ใช้ currentStep ที่อาจยังไม่อัปเดต)
+    const stepNow = activeStepRef.current;
     const yawNow = emaYawRef.current;
     const noseNow = lastNoseRef.current;
-    const stillOk = inFrameAndAngleOk(currentStep, yawNow, noseNow);
+
+    // ✅ ตรวจว่าหน้าอยู่ในกรอบและมุมถูกต้องก่อนถ่าย
+    const stillOk = inFrameAndAngleOk(stepNow, yawNow, noseNow);
     if (!stillOk) return;
 
     setIsCapturing(true);
 
+    // ✅ สร้างภาพจากวิดีโอ (mirror)
     const canvas = document.createElement("canvas");
     canvas.width = 640;
     canvas.height = 480;
@@ -462,28 +510,29 @@ if (isCountingDownRef.current || countdown != null) {
 
     const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
 
-    // reset หลังถ่าย
-    // reset หลังถ่าย
-setTimeout(() => {
-  setIsCapturing(false);
-  setIsCountingDown(false);
-  setCountdown(null);
-  setBigCount(null);
-  stableStartRef.current = null;
-  setIsFaceOkIfChanged(false);
-
-
-  // ✅ เพิ่มบรรทัดนี้เพื่อให้กลับไปแสดง hint เริ่มต้นหลังถ่ายเสร็จ
-  setHintTextIfChanged("ยื่นหน้าให้อยู่ในกรอบสแกน");
-}, 600);
-
-    setCapturedImages((prev) => ({ ...prev, [currentStep]: dataUrl }));
-    setCompletedSteps((prev) => ({ ...prev, [currentStep]: true }));
-
+    // ✅ รีเซ็ตสถานะหลังถ่าย (เพื่อเริ่มมุมใหม่ได้เลย)
     setTimeout(() => {
-      if (currentStep === "front") setCurrentStep("left");
-      else if (currentStep === "left") setCurrentStep("right");
-      else if (currentStep === "right") {
+      setIsCapturing(false);
+      setIsCountingDown(false);
+      setCountdown(null);
+      setBigCount(null);
+      countdownLockRef.current = false;  // ปลดล็อกเคาน์ดาวน์
+      stableStartRef.current = null;
+      setIsFaceOkIfChanged(false);
+      setHintTextIfChanged("ยื่นหน้าให้อยู่ในกรอบสแกน"); // รีเซ็ตข้อความเริ่มต้น
+    }, 600);
+
+    // ✅ บันทึกภาพของมุมที่ถ่ายไว้จริง (ไม่ใช้ currentStep)
+    setCapturedImages((prev) => ({ ...prev, [stepNow]: dataUrl }));
+    setCompletedSteps((prev) => ({ ...prev, [stepNow]: true }));
+
+    // ✅ เปลี่ยนไปยังมุมถัดไปหลังถ่ายเสร็จ (ไม่ใช้ currentStep)
+    setTimeout(() => {
+      if (stepNow === "front") {
+        setCurrentStep("left");
+      } else if (stepNow === "left") {
+        setCurrentStep("right");
+      } else if (stepNow === "right") {
         const finalImages = { ...capturedImages, right: dataUrl };
         onAnalyze(finalImages);
       }
