@@ -155,7 +155,7 @@ export function HistoryPage({ userName = 'Suda', onViewScanDetail, onViewAllScan
   const currentData = progressData[selectedTimeframe];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-lavender-50/50 to-blue-50/30 pb-28 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-lavender-50/50 to-blue-50/30 pb-28 relative">
       {/* Cute floating decorations - Simplified for performance */}
       <div className="absolute top-20 right-10 text-pink-200 opacity-20">
         <Sparkles className="w-16 h-16" />

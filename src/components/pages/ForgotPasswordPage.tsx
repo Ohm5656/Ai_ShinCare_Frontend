@@ -45,7 +45,7 @@ export function ForgotPasswordPage({ onBack }: ForgotPasswordPageProps) {
 
   if (isSent) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-lavender-50 to-blue-50 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-lavender-50 to-blue-50 flex flex-col items-center justify-center p-6 relative">
         {/* Decorations */}
         <motion.div
           className="absolute top-20 left-10 text-green-300 opacity-40"
@@ -132,7 +132,7 @@ export function ForgotPasswordPage({ onBack }: ForgotPasswordPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-lavender-50 to-blue-50 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-lavender-50 to-blue-50 flex flex-col items-center justify-center p-6 relative">
       {/* Cute floating decorations */}
       <motion.div
         className="absolute top-20 right-10 text-pink-300 opacity-40"

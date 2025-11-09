@@ -6,10 +6,10 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
-import { GlowbieBellLogo } from '../GlowbieBellLogo';
 import { toast } from 'sonner@2.0.3';
 import { useLanguage, Language } from '../../contexts/LanguageContext';
 import { useUser } from '../../contexts/UserContext';
+import logoImage from 'figma:asset/8c01ea6e2795f8593526b874e55d27cc3fd27848.png';
 
 interface LoginRegisterScreenProps {
   onLogin: () => void;
@@ -320,19 +320,31 @@ export function LoginRegisterScreen({ onLogin, onForgotPassword }: LoginRegister
   // Handle OAuth login
   const handleOAuthLogin = (provider: 'google' | 'apple') => {
     const providerName = provider === 'google' ? 'Google' : 'Apple';
-    const connectingMsg = language === 'th' ? `ำลังเชื่อมต่อกับ ${providerName}... 🔄` : 
-                          language === 'en' ? `Connecting to ${providerName}... 🔄` : 
-                          `正在连接到 ${providerName}... 🔄`;
-    const comingSoonMsg = language === 'th' ? 'ฟีเจอร์นี้จะพร้อมใช้งานเร็วๆ นี้!' :
-                          language === 'en' ? 'This feature is coming soon!' :
-                          '此功能即将推出！';
     
-    toast.info(connectingMsg, {
-      description: comingSoonMsg
-    });
+    // Show connecting message first
+    const connectingTitle = language === 'th' ? `กำลังเชื่อมต่อกับ ${providerName}...` : 
+                            language === 'en' ? `Connecting to ${providerName}...` : 
+                            `正在连接到 ${providerName}...`;
+    
+    toast.loading(connectingTitle);
+    
+    // Then show coming soon message after brief delay
+    setTimeout(() => {
+      const comingSoonTitle = language === 'th' ? 'กำลังพัฒนา' :
+                              language === 'en' ? 'Coming Soon' :
+                              '即将推出';
+      const comingSoonMsg = language === 'th' ? 'ฟีเจอร์นี้จะพร้อมใช้งานเร็วๆ นี้! 🚀' :
+                            language === 'en' ? 'This feature is coming soon! 🚀' :
+                            '此功能即将推出！🚀';
+      
+      toast.dismiss();
+      toast.info(comingSoonTitle, {
+        description: comingSoonMsg,
+        duration: 3000
+      });
+    }, 800);
     
     // In real implementation, this would trigger OAuth flow
-    // For now, just show a message
   };
 
   const languages: { code: Language; name: string; flag: string; nativeName: string }[] = [
@@ -349,9 +361,9 @@ export function LoginRegisterScreen({ onLogin, onForgotPassword }: LoginRegister
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-purple-100/60 to-pink-100/70 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-purple-100/60 to-pink-100/70 flex flex-col items-center justify-center p-6 relative">
         {/* Simplified Background - Remove heavy blobs */}
-        <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0 z-0 pointer-events-none -z-10">
           <div className="absolute -top-40 -left-40 w-96 h-96 bg-blue-200/20 rounded-full" />
           <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-purple-200/20 rounded-full" />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-pink-200/20 rounded-full" />
@@ -430,20 +442,136 @@ export function LoginRegisterScreen({ onLogin, onForgotPassword }: LoginRegister
           {/* Logo & Welcome */}
           <div className="text-center mb-8">
             <motion.div 
-              className="mb-4 flex items-center justify-center"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
+              className="mb-4 flex items-center justify-center relative"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ 
+                opacity: 1, 
+                y: 0,
+              }}
               transition={{ 
-                duration: 0.5, 
+                duration: 0.8, 
                 ease: "easeOut",
                 delay: 0.1
               }}
-              whileHover={{ 
-                scale: 1.03,
-                transition: { duration: 0.3 }
-              }}
             >
-              <GlowbieBellLogo size={140} animated={true} />
+              {/* Floating emojis around logo */}
+              <motion.div
+                className="absolute text-2xl"
+                style={{ top: '-10px', left: '20px' }}
+                animate={{ 
+                  y: [0, -10, 0],
+                  rotate: [0, 10, 0]
+                }}
+                transition={{
+                  duration: 3.5,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 0
+                }}
+              >
+                ✨
+              </motion.div>
+
+              <motion.div
+                className="absolute text-xl"
+                style={{ top: '10px', right: '15px' }}
+                animate={{ 
+                  y: [0, -8, 0],
+                  rotate: [0, -15, 0]
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 0.5
+                }}
+              >
+                💫
+              </motion.div>
+
+              <motion.div
+                className="absolute text-xl"
+                style={{ bottom: '20px', left: '15px' }}
+                animate={{ 
+                  y: [0, -12, 0],
+                  rotate: [0, 12, 0]
+                }}
+                transition={{
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 1
+                }}
+              >
+                ⭐
+              </motion.div>
+
+              <motion.div
+                className="absolute text-2xl"
+                style={{ bottom: '10px', right: '20px' }}
+                animate={{ 
+                  y: [0, -10, 0],
+                  rotate: [0, -10, 0],
+                  scale: [1, 1.1, 1]
+                }}
+                transition={{
+                  duration: 3.2,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 1.5
+                }}
+              >
+                🌟
+              </motion.div>
+
+              <motion.div
+                className="absolute text-lg"
+                style={{ top: '50%', left: '0px' }}
+                animate={{ 
+                  x: [-3, 3, -3],
+                  opacity: [0.6, 1, 0.6]
+                }}
+                transition={{
+                  duration: 2.5,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 0.8
+                }}
+              >
+                💖
+              </motion.div>
+
+              <motion.div
+                className="absolute text-lg"
+                style={{ top: '50%', right: '0px' }}
+                animate={{ 
+                  x: [3, -3, 3],
+                  opacity: [0.6, 1, 0.6]
+                }}
+                transition={{
+                  duration: 2.8,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 1.2
+                }}
+              >
+                ✨
+              </motion.div>
+
+              {/* Main Logo */}
+              <motion.img
+                src={logoImage}
+                alt="GlowbieBell Logo"
+                className="w-48 h-48 relative z-10"
+                animate={{ 
+                  y: [0, -8, 0],
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              />
             </motion.div>
             
             <motion.h1 

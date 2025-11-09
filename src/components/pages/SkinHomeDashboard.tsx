@@ -85,7 +85,7 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-lavender-50 to-blue-50 pb-28 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-lavender-50 to-blue-50 pb-28 relative">
       {/* Simplified decorations - Remove heavy animations */}
       <div className="absolute top-20 right-10 text-pink-200/50 pointer-events-none">
         <Heart className="w-16 h-16" fill="currentColor" />

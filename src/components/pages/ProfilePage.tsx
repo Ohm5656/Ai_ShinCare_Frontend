@@ -2,7 +2,7 @@ import { motion } from 'motion/react';
 import { useState } from 'react';
 import { 
   User, Mail, Calendar, Heart, LogOut, Lock, 
-  Edit2, Sparkles, TrendingUp, Languages
+  Edit2, Sparkles, TrendingUp, Languages, BookOpen
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -39,6 +39,7 @@ interface ProfilePageProps {
   onChangePassword?: () => void;
   onLogout?: () => void;
   onPremiumClick?: () => void;
+  onViewTutorial?: () => void;
 }
 
 export function ProfilePage({ 
@@ -49,7 +50,8 @@ export function ProfilePage({
   onEditProfile,
   onChangePassword,
   onLogout,
-  onPremiumClick
+  onPremiumClick,
+  onViewTutorial
 }: ProfilePageProps) {
   const { language, setLanguage, t } = useLanguage();
   const latestSkinScore = 87;
@@ -164,6 +166,13 @@ export function ProfilePage({
   };
 
   const actionButtons = [
+    { 
+      label: t.tutorialViewGuide, 
+      icon: BookOpen, 
+      variant: 'outline' as const, 
+      color: 'lavender',
+      onClick: onViewTutorial
+    },
     { 
       label: t.changePassword, 
       icon: Lock, 
@@ -433,6 +442,8 @@ export function ProfilePage({
               {actionButtons.map((button, index) => {
                 const Icon = button.icon;
                 const isPink = button.color === 'pink';
+                const isBlue = button.color === 'blue';
+                const isLavender = button.color === 'lavender';
                 return (
                   <Button
                     key={index}
@@ -443,7 +454,11 @@ export function ProfilePage({
                         ? 'border-red-200 text-red-600 hover:bg-red-50' 
                         : isPink
                           ? 'border-pink-200 text-pink-700 hover:bg-pink-50'
-                          : 'border-blue-200 text-blue-700 hover:bg-blue-50'
+                          : isBlue
+                            ? 'border-blue-200 text-blue-700 hover:bg-blue-50'
+                            : isLavender
+                              ? 'border-lavender-200 text-lavender-700 hover:bg-lavender-50'
+                              : 'border-gray-200 text-gray-700 hover:bg-gray-50'
                     }`}
                   >
                     <Icon className="w-5 h-5" />
