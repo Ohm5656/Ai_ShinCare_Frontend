@@ -465,6 +465,29 @@ export interface Translations {
   noScansFound: string;
   keepTracking: string;
   
+  // App Tutorial
+  tutorialTitle: string;
+  tutorialWelcome: string;
+  tutorialGetStarted: string;
+  tutorialStep1Title: string;
+  tutorialStep1Desc: string;
+  tutorialStep2Title: string;
+  tutorialStep2Desc: string;
+  tutorialStep3Title: string;
+  tutorialStep3Desc: string;
+  tutorialStep4Title: string;
+  tutorialStep4Desc: string;
+  tutorialStep5Title: string;
+  tutorialStep5Desc: string;
+  tutorialStep6Title: string;
+  tutorialStep6Desc: string;
+  tutorialNext: string;
+  tutorialPrevious: string;
+  tutorialSkip: string;
+  tutorialFinish: string;
+  tutorialViewGuide: string;
+  tutorialHowToUse: string;
+  
   // Language property for detecting current language
   language: Language;
 }
@@ -932,6 +955,29 @@ const translations: Record<Language, Translations> = {
     noScansFound: 'ไม่พบรายการสแกน',
     keepTracking: 'ติดตามต่อไป',
     
+    // App Tutorial
+    tutorialTitle: 'คู่มือการใช้งาน GlowbieBell ✨',
+    tutorialWelcome: 'ยินดีต้อนรับสู่ GlowbieBell! 🌸',
+    tutorialGetStarted: 'มาเริ่มต้นกันเลย',
+    tutorialStep1Title: 'หน้าแรก - แดชบอร์ด 🏠',
+    tutorialStep1Desc: 'ดูคะแนนผิวและภาพรวมสุขภาพผิวของคุณ ตรวจสอบสถิติและแนวโน้มการพัฒนาผิวได้ที่นี่',
+    tutorialStep2Title: 'สแกนใบหน้า 📸',
+    tutorialStep2Desc: 'สแกนใบหน้า 3 มุม (หน้า → ซ้าย → ขวา) ระบบจะวิเคราะห์อัตโนมัติเมื่อครบ 3 มุม ใช้เวลาเพียง 30 วินาที!',
+    tutorialStep3Title: 'ผลการวิเคราะห์ 📊',
+    tutorialStep3Desc: 'ดูคะแนนผิวและรายละเอียดการวิเคราะห์ใน 6 ด้าน: ริ้วรอย ความแดง โทนสีผิว ความมัน ถุงใต้ตา และสิว',
+    tutorialStep4Title: 'แชทกับ AI 💬',
+    tutorialStep4Desc: 'ปรึกษา Dr.SkinAI ผู้เชี่ยวชาญดูแลผิวส่วนตัว รับคำแนะนำผลิตภัณฑ์และวิธีดูแลผิวเฉพาะบุคคล',
+    tutorialStep5Title: 'ประวัติและกราฟ 📈',
+    tutorialStep5Desc: 'ติดตามความก้าวหน้าของผิว ดูกราฟแนวโน้มคะแนนผิว และเปรียบเทียบผลการสแกนย้อนหลัง',
+    tutorialStep6Title: 'โปรไฟล์ 👤',
+    tutorialStep6Desc: 'จัดการข้อมูลส่วนตัว เปลี่ยนรหัสผ่าน เลือกภาษา และดูคะแนนผิวล่าสุดของคุณ',
+    tutorialNext: 'ถัดไป',
+    tutorialPrevious: 'ก่อนหน้า',
+    tutorialSkip: 'ข้าม',
+    tutorialFinish: 'เริ่มใช้งาน! 🎉',
+    tutorialViewGuide: 'ดูคู่มือการใช้งาน 📖',
+    tutorialHowToUse: 'วิธีใช้งานแอป',
+    
     // Language property
     language: 'th' as Language,
   },
@@ -1396,6 +1442,29 @@ const translations: Record<Language, Translations> = {
     noScansFound: 'No scans found',
     keepTracking: 'Keep Tracking',
     
+    // App Tutorial
+    tutorialTitle: 'GlowbieBell Guide ✨',
+    tutorialWelcome: 'Welcome to GlowbieBell! 🌸',
+    tutorialGetStarted: "Let's Get Started",
+    tutorialStep1Title: 'Home Dashboard 🏠',
+    tutorialStep1Desc: 'View your skin score and overall skin health. Check your stats and skin improvement trends right here.',
+    tutorialStep2Title: 'Face Scan 📸',
+    tutorialStep2Desc: 'Scan your face from 3 angles (Front → Left → Right). The system analyzes automatically when all 3 angles are captured. Takes only 30 seconds!',
+    tutorialStep3Title: 'Analysis Results 📊',
+    tutorialStep3Desc: 'View your skin score and detailed analysis across 6 metrics: Wrinkles, Redness, Skin Tone, Oiliness, Eye Bags, and Acne.',
+    tutorialStep4Title: 'Chat with AI 💬',
+    tutorialStep4Desc: 'Consult Dr.SkinAI, your personal skincare expert. Get personalized product recommendations and skincare advice.',
+    tutorialStep5Title: 'History & Graphs 📈',
+    tutorialStep5Desc: 'Track your skin progress, view trend charts of your skin scores, and compare past scan results.',
+    tutorialStep6Title: 'Profile 👤',
+    tutorialStep6Desc: 'Manage your personal information, change password, select language, and view your latest skin score.',
+    tutorialNext: 'Next',
+    tutorialPrevious: 'Previous',
+    tutorialSkip: 'Skip',
+    tutorialFinish: 'Get Started! 🎉',
+    tutorialViewGuide: 'View User Guide 📖',
+    tutorialHowToUse: 'How to Use',
+    
     // Language property
     language: 'en' as Language,
   },
@@ -1854,6 +1923,29 @@ const translations: Record<Language, Translations> = {
     last3Months: '最近3个月',
     noScansFound: '未找到扫描',
     keepTracking: '继续跟踪',
+    
+    // App Tutorial
+    tutorialTitle: 'GlowbieBell 使用指南 ✨',
+    tutorialWelcome: '欢迎来到 GlowbieBell! 🌸',
+    tutorialGetStarted: '开始使用',
+    tutorialStep1Title: '主页仪表板 🏠',
+    tutorialStep1Desc: '查看您的皮肤评分和整体皮肤健康状况。在这里查看您的统计数据和皮肤改善趋势。',
+    tutorialStep2Title: '面部扫描 📸',
+    tutorialStep2Desc: '从3个角度扫描您的面部（正面→左侧→右侧）。当捕获所有3个角度时，系统会自动分析。仅需30秒！',
+    tutorialStep3Title: '分析结果 📊',
+    tutorialStep3Desc: '查看您的皮肤评分和6个指标的详细分析：皱纹、发红、肤色、油性、眼袋和痤疮。',
+    tutorialStep4Title: '与AI聊天 💬',
+    tutorialStep4Desc: '咨询 Dr.SkinAI，您的个人护肤专家。获得个性化的产品推荐和护肤建议。',
+    tutorialStep5Title: '历史记录与图表 📈',
+    tutorialStep5Desc: '跟踪您的皮肤进展，查看皮肤评分的趋势图表，并比较过去的扫描结果。',
+    tutorialStep6Title: '个人资料 👤',
+    tutorialStep6Desc: '管理您的个人信息，更改密码，选择语言，并查看您的最新皮肤评分。',
+    tutorialNext: '下一步',
+    tutorialPrevious: '上一步',
+    tutorialSkip: '跳过',
+    tutorialFinish: '开始使用! 🎉',
+    tutorialViewGuide: '查看使用指南 📖',
+    tutorialHowToUse: '如何使用应用',
     
     // Language property
     language: 'zh' as Language,

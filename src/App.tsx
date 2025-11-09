@@ -1,8 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { LoginRegisterScreen } from './components/pages/LoginRegisterScreen';
 import { ForgotPasswordPage } from './components/pages/ForgotPasswordPage';
 import { SkinHomeDashboard } from './components/pages/SkinHomeDashboard';
 import { FaceScanScreen } from './components/pages/FaceScanScreen';
+import { PreAnalysisChat } from './components/pages/PreAnalysisChat';
+import { AnalyzingScreen } from './components/pages/AnalyzingScreen';
 import { SkinAnalysisResult } from './components/pages/SkinAnalysisResult';
 import { DrSkinAIChatScreen } from './components/pages/DrSkinAIChatScreen';
 import { ProfilePage } from './components/pages/ProfilePage';
@@ -14,6 +16,7 @@ import { AllScansPage } from './components/pages/AllScansPage';
 import { GalleryPage } from './components/pages/GalleryPage';
 import { PremiumPage } from './components/pages/PremiumPage';
 import { BottomNavSkin } from './components/BottomNavSkin';
+import { AppTutorial } from './components/AppTutorial';
 import { Toaster } from './components/ui/sonner';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { UserProvider, useUser } from './contexts/UserContext';
@@ -24,7 +27,9 @@ type Screen =
   | 'login' 
   | 'forgotPassword'
   | 'home' 
-  | 'scan' 
+  | 'scan'
+  | 'preAnalysisChat'
+  | 'analyzing'
   | 'result' 
   | 'chat' 
   | 'history' 
@@ -49,6 +54,27 @@ function AppContent() {
   
   // Current screen state
   const [currentScreen, setCurrentScreen] = useState<Screen>('login');
+  
+  // Tutorial state
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  // Scan flow state
+  const [userConcerns, setUserConcerns] = useState<string[]>([]);
+  const [userData, setUserData] = useState<{
+    gender?: string;
+    age?: string;
+    skinType?: string;
+    isSensitive?: boolean;
+  }>({});
+  const [capturedImages, setCapturedImages] = useState<{
+    front: string | null;
+    left: string | null;
+    right: string | null;
+  }>({
+    front: null,
+    left: null,
+    right: null,
+  });
 
   // Profile data state - now synced with user context
   const profileData: ProfileData = useMemo(() => ({
@@ -146,6 +172,8 @@ function AppContent() {
   const handleLogin = () => {
     setIsLoggedIn(true);
     setCurrentScreen('home');
+    // Show tutorial after login
+    setShowTutorial(true);
   };
 
   /**
@@ -242,8 +270,38 @@ function AppContent() {
       case 'scan':
         return (
           <FaceScanScreen
-            onAnalyze={() => setCurrentScreen('result')}
+            onAnalyze={(images) => {
+              setCapturedImages(images);
+              setCurrentScreen('preAnalysisChat');
+            }}
             onBack={() => setCurrentScreen('home')}
+          />
+        );
+
+      // Pre-Analysis Chat Screen (asks about skin concerns)
+      case 'preAnalysisChat':
+        return (
+          <PreAnalysisChat
+            onComplete={(data) => {
+              setUserConcerns(data.concerns);
+              setUserData({
+                gender: data.gender,
+                age: data.age,
+                skinType: data.skinType,
+                isSensitive: data.isSensitive,
+              });
+              setCurrentScreen('analyzing');
+            }}
+          />
+        );
+
+      // Analyzing Screen (processing animation)
+      case 'analyzing':
+        return (
+          <AnalyzingScreen
+            onComplete={() => setCurrentScreen('result')}
+            capturedImages={capturedImages}
+            userConcerns={userConcerns}
           />
         );
 
@@ -342,6 +400,7 @@ function AppContent() {
               onEditProfile={() => setCurrentScreen('editProfile')}
               onChangePassword={() => setCurrentScreen('changePassword')}
               onPremiumClick={() => setCurrentScreen('premium')}
+              onViewTutorial={() => setShowTutorial(true)}
               onLogout={handleLogout}
             />
             <BottomNavSkin activeTab="profile" onTabChange={handleTabChange} />
@@ -401,6 +460,8 @@ function AppContent() {
       </div>
       {/* Toast notifications */}
       <Toaster position="top-center" richColors />
+      {/* App Tutorial */}
+      <AppTutorial open={showTutorial} onOpenChange={setShowTutorial} />
     </div>
   );
 }
