@@ -586,16 +586,39 @@ html {
 /* ===== ULTRA SMOOTH MOBILE-FIRST OPTIMIZATIONS - PREMIUM 60FPS+ ===== */
 @layer utilities {
 
+  /* Performance optimization for animations */
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Hardware acceleration for frequently animated elements */
+  .will-change-transform {
+    will-change: transform;
+  }
+
+  .will-change-opacity {
+    will-change: opacity;
+  }
+
+  /* GPU-accelerated transforms */
+  .gpu-accelerated {
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+  }
   
   /* Normal scroll container */
   .smooth-scroll {
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
   
   /* Scroll with snap points */
   .smooth-scroll-snap {
     scroll-snap-type: y proximity;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
   
   /* Touch-friendly click area */
@@ -610,6 +633,7 @@ html {
   .scrollable {
     touch-action: pan-y pinch-zoom;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
   
   /* Active state with micro-interaction */
@@ -617,8 +641,6 @@ html {
     transform: scale(0.97);
     opacity: 0.9;
   }
-  
-
   
   /* Performance for animations */
   .animate-optimized {

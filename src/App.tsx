@@ -51,6 +51,9 @@ function AppContent() {
   
   // Authentication state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // เพิ่มบรรทัดนี้
+  const [analyzeResult, setAnalyzeResult] = useState<any>(null);
+
   
   // Current screen state
   const [currentScreen, setCurrentScreen] = useState<Screen>('login');
@@ -96,14 +99,15 @@ function AppContent() {
       score: 87,
       improvement: '+2',
       thumbnail: '🌸',
-      topIssue: t.excellentHydration,
+      topIssue: t.language === 'th' ? 'ความสม่ำเสมอดีเยี่ยม' : t.language === 'en' ? 'Excellent evenness' : '均匀度极佳',
       metrics: {
         wrinkles: 85,
+        sagging: 80,
+        darkSpots: 75,
+        acne: 82,
         redness: 72,
-        tone: 88,
-        oil: 65,
-        eyeBags: 78,
-        acne: 82
+        pores: 70,
+        evenness: 88
       }
     },
     {
@@ -112,14 +116,15 @@ function AppContent() {
       score: 85,
       improvement: '+1',
       thumbnail: '🌺',
-      topIssue: t.goodTexture,
+      topIssue: t.language === 'th' ? 'รูขุมขนดีขึ้น' : t.language === 'en' ? 'Pores improved' : '毛孔改善',
       metrics: {
         wrinkles: 84,
+        sagging: 79,
+        darkSpots: 74,
+        acne: 81,
         redness: 71,
-        tone: 87,
-        oil: 68,
-        eyeBags: 77,
-        acne: 81
+        pores: 69,
+        evenness: 87
       }
     },
     {
@@ -131,11 +136,12 @@ function AppContent() {
       topIssue: t.elasticityImproved,
       metrics: {
         wrinkles: 84,
+        sagging: 79,
+        darkSpots: 74,
+        acne: 81,
         redness: 71,
-        tone: 87,
-        oil: 70,
-        eyeBags: 77,
-        acne: 81
+        pores: 71,
+        evenness: 87
       }
     },
     {
@@ -147,11 +153,12 @@ function AppContent() {
       topIssue: t.steady,
       metrics: {
         wrinkles: 83,
+        sagging: 78,
+        darkSpots: 73,
+        acne: 80,
         redness: 70,
-        tone: 86,
-        oil: 75,
-        eyeBags: 76,
-        acne: 80
+        pores: 72,
+        evenness: 86
       }
     },
   ], [t]);
@@ -299,16 +306,24 @@ function AppContent() {
       case 'analyzing':
         return (
           <AnalyzingScreen
-            onComplete={() => setCurrentScreen('result')}
             capturedImages={capturedImages}
             userConcerns={userConcerns}
+            // ✅ ส่ง profile ไป backend ด้วย (ให้ AnalyzingScreen ใช้ formData.append)
+            userData={userData} 
+            // ✅ รับผลลัพธ์จริงจาก backend แล้วเก็บลง state
+            onComplete={(result) => {
+              setAnalyzeResult(result);
+              setCurrentScreen('result');
+            }}
           />
         );
+
 
       // Skin Analysis Result Screen
       case 'result':
         return (
           <SkinAnalysisResult
+            result={analyzeResult}                 // ✅ ส่งผลลัพธ์จริงจาก backend
             onChatWithAI={() => setCurrentScreen('chat')}
             onBack={() => setCurrentScreen('home')}
           />
