@@ -161,13 +161,13 @@ const responsePatterns: ResponsePattern[] = [
 
 const greetingResponses = {
   th: [
-    "สวัสดี! ยินดีต้อนรับสู่ GlowbieBell 💕 ..."
+    "สวัสดี! ยินดีต้อนรับสู่ GlowbieBell💕"
   ],
   en: [
-    "Hello! Welcome to GlowbieBell 💕 ..."
+    "Hello! Welcome to GlowbieBell💕 "
   ],
   zh: [
-    "您好！欢迎来到 GlowbieBell 💕 ..."
+    "您好！欢迎来到 GlowbieBell💕"
   ]
 };
 
@@ -176,9 +176,9 @@ const greetingResponses = {
 // ================================================================
 
 const fallbackResponses = {
-  th: ["ขอโทษนะ ผมไม่แน่ใจว่าเข้าใจคำถาม ..."],
-  en: ["Sorry, I’m not sure I understood ..."],
-  zh: ["抱歉，我不确定是否理解 ..."]
+  th: ["ขอโทษนะ ผมไม่แน่ใจว่าเข้าใจคำถาม"],
+  en: ["Sorry, I’m not sure I understood"],
+  zh: ["抱歉，我不确定是否理解"]
 };
 
 // ================================================================
