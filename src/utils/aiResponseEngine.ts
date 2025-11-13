@@ -161,19 +161,13 @@ const responsePatterns: ResponsePattern[] = [
 
 const greetingResponses = {
   th: [
-    "สวัสดี! ยินดีต้อนรับสู่ GlowbieBell 💕 ...",
-    "สวัสดี! 🌸 ...",
-    "หวัดดี! ✨ ..."
+    "สวัสดี! ยินดีต้อนรับสู่ GlowbieBell 💕 ..."
   ],
   en: [
-    "Hello! Welcome to GlowbieBell 💕 ...",
-    "Hi there! 🌸 ...",
-    "Hey! ✨ ..."
+    "Hello! Welcome to GlowbieBell 💕 ..."
   ],
   zh: [
-    "您好！欢迎来到 GlowbieBell 💕 ...",
-    "你好！🌸 ...",
-    "嘿！✨ ..."
+    "您好！欢迎来到 GlowbieBell 💕 ..."
   ]
 };
 
