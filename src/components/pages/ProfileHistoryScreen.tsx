@@ -54,7 +54,7 @@ export function ProfileHistoryScreen({ onBack }: ProfileHistoryScreenProps) {
     {
       icon: <TrendingUp className="w-5 h-5 text-green-600" />,
       label: t.mostImproved,
-      value: t.hydration,
+      value: t.pores, // เปลี่ยนจาก t.hydration เป็น metrics ใหม่
       bg: 'bg-green-50',
     },
     {

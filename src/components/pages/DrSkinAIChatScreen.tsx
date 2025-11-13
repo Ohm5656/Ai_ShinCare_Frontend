@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Send, Plus, Sparkles, Image as ImageIcon } from 'lucide-react';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { AIResponseEngine } from '../../utils/aiResponseEngine';
 import drAILogo from 'figma:asset/9e2bc221ce12a816af58bdf5aac2d784fd135893.png';
 
 interface Message {
@@ -19,10 +20,19 @@ interface DrSkinAIChatScreenProps {
 
 export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
   const { t } = useLanguage();
+  
+  // Initialize AI Engine
+  const aiEngineRef = useRef(new AIResponseEngine(t.language as 'th' | 'en' | 'zh'));
+  
+  // Update AI engine language when language changes
+  useEffect(() => {
+    aiEngineRef.current.setLanguage(t.language as 'th' | 'en' | 'zh');
+  }, [t.language]);
+  
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
-      text: t.aiGreeting,
+      text: aiEngineRef.current.getGreeting(),
       sender: 'ai',
       timestamp: new Date(),
     },
@@ -34,11 +44,8 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const quickReplies = [
-    t.recommendProducts,
-    t.causeOfRedness,
-    t.howToReduceAcne,
-  ];
+  // Get quick replies from AI engine
+  const quickReplies = aiEngineRef.current.getSuggestedQuestions();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -79,11 +86,11 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
     setShowSendEffect(true);
     setTimeout(() => setShowSendEffect(false), 1000);
 
-    // Simulate AI response
+    // Simulate AI response with enhanced AI engine
     setTimeout(() => {
       const aiResponse: Message = {
         id: messages.length + 2,
-        text: getAIResponse(inputMessage),
+        text: aiEngineRef.current.generateResponse(inputMessage),
         sender: 'ai',
         timestamp: new Date(),
       };
@@ -99,66 +106,20 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
     }, 100);
   };
 
-  const getAIResponse = (userMessage: string): string => {
-    const lowerMessage = userMessage.toLowerCase();
-    
-    if (lowerMessage.includes('ผลิตภัณฑ์') || lowerMessage.includes('แนะนำ') || lowerMessage.includes('skincare') || lowerMessage.includes('recommend') || lowerMessage.includes('产品') || lowerMessage.includes('推荐')) {
-      return t.aiProductRecommendation;
-    } else if (lowerMessage.includes('ผิวแดง') || lowerMessage.includes('แดง') || lowerMessage.includes('redness') || lowerMessage.includes('red') || lowerMessage.includes('红肿') || lowerMessage.includes('发红')) {
-      return t.aiRednessExplanation;
-    } else if (lowerMessage.includes('สิว') || lowerMessage.includes('acne') || lowerMessage.includes('痘痘')) {
-      return t.aiAcneAdvice;
-    } else {
-      return t.aiGeneralResponse;
-    }
-  };
-
   return (
     <div className="min-h-screen flex flex-col relative">
       {/* Medical AI Gradient Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#E3F2FF] via-[#FFF0F7] via-[#F5F0FF] to-[#E8F4FF] -z-10" />
       
-      {/* Animated background orbs - Soft medical theme */}
-      <motion.div
-        className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-[#7DB8FF]/25 to-transparent rounded-full blur-3xl"
-        animate={{
-          x: [0, 40, 0],
-          y: [0, -30, 0],
-          scale: [1, 1.15, 1]
-        }}
-        transition={{
-          duration: 9,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
+      {/* Animated background orbs - Simplified for performance */}
+      <div
+        className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-[#7DB8FF]/20 to-transparent rounded-full blur-3xl"
       />
-      <motion.div
-        className="absolute top-1/3 left-0 w-80 h-80 bg-gradient-to-tr from-[#CBB8FF]/20 to-transparent rounded-full blur-3xl"
-        animate={{
-          x: [0, -25, 0],
-          y: [0, 35, 0],
-          scale: [1, 1.2, 1]
-        }}
-        transition={{
-          duration: 11,
-          repeat: Infinity,
-          ease: "easeInOut",
-          delay: 2
-        }}
+      <div
+        className="absolute top-1/3 left-0 w-80 h-80 bg-gradient-to-tr from-[#CBB8FF]/15 to-transparent rounded-full blur-3xl"
       />
-      <motion.div
-        className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-[#FFB5D9]/25 to-transparent rounded-full blur-3xl"
-        animate={{
-          x: [0, -20, 0],
-          y: [0, 30, 0],
-          scale: [1, 1.15, 1]
-        }}
-        transition={{
-          duration: 10,
-          repeat: Infinity,
-          ease: "easeInOut",
-          delay: 1
-        }}
+      <div
+        className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-[#FFB5D9]/20 to-transparent rounded-full blur-3xl"
       />
       
       {/* Dr. A.I. Logo - Central Watermark */}
@@ -188,28 +149,16 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
         />
       </motion.div>
       
-      {/* Floating Medical/AI Particles */}
-      {[...Array(12)].map((_, i) => (
-        <motion.div
+      {/* Floating Medical/AI Particles - Simplified */}
+      {[...Array(6)].map((_, i) => (
+        <div
           key={i}
           className="absolute w-2 h-2 rounded-full"
           style={{
             background: i % 3 === 0 ? '#7DB8FF' : i % 3 === 1 ? '#FFB5D9' : '#CBB8FF',
-            opacity: 0.2,
+            opacity: 0.15,
             left: `${Math.random() * 100}%`,
             top: `${Math.random() * 100}%`,
-          }}
-          animate={{
-            y: [0, -30, 0],
-            x: [0, Math.random() * 20 - 10, 0],
-            opacity: [0.1, 0.3, 0.1],
-            scale: [1, 1.5, 1]
-          }}
-          transition={{
-            duration: 6 + Math.random() * 4,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: Math.random() * 3
           }}
         />
       ))}
@@ -257,7 +206,7 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
         <div className="bg-white/80 backdrop-blur-xl border-b border-pink-100/50 px-5 py-4 shadow-sm">
           <div className="flex items-center gap-3">
             <Avatar className="w-12 h-12 bg-gradient-to-br from-pink-200 to-lavender-200 border-2 border-white shadow-md">
-              <AvatarFallback className="text-2xl bg-transparent">👩🏻‍⚕️</AvatarFallback>
+              <AvatarFallback className="text-2xl bg-transparent">👨🏻‍⚕️</AvatarFallback>
             </Avatar>
             
             <div className="flex-1">
@@ -290,7 +239,7 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
                 <div className={`flex items-end gap-2 max-w-[85%] ${message.sender === 'user' ? 'flex-row-reverse' : ''}`}>
                   {message.sender === 'ai' && (
                     <Avatar className="w-7 h-7 bg-gradient-to-br from-pink-100 to-lavender-100 flex-shrink-0 shadow-sm">
-                      <AvatarFallback className="text-base bg-transparent">👩🏻‍⚕️</AvatarFallback>
+                      <AvatarFallback className="text-base bg-transparent">👨🏻‍⚕️</AvatarFallback>
                     </Avatar>
                   )}
                   
@@ -326,7 +275,7 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
               className="flex items-end gap-2"
             >
               <Avatar className="w-7 h-7 bg-gradient-to-br from-pink-100 to-lavender-100 shadow-sm">
-                <AvatarFallback className="text-base bg-transparent">👩🏻‍⚕️</AvatarFallback>
+                <AvatarFallback className="text-base bg-transparent">👨🏻‍⚕️</AvatarFallback>
               </Avatar>
               <div className="bg-white/80 backdrop-blur-sm px-5 py-3 rounded-[20px] rounded-bl-md shadow-sm border border-lavender-100/50">
                 <div className="flex gap-1.5">

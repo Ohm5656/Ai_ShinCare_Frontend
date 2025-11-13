@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Mail, Lock, User, Calendar, Upload, CheckCircle2, Languages, Eye, EyeOff, X } from 'lucide-react';
+import { Mail, Lock, User, Calendar, Upload, CheckCircle2, Languages, Eye, EyeOff, X } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { toast } from 'sonner@2.0.3';
 import { useLanguage, Language } from '../../contexts/LanguageContext';
 import { useUser } from '../../contexts/UserContext';
-import logoImage from 'figma:asset/8c01ea6e2795f8593526b874e55d27cc3fd27848.png';
+import { GlowbieBellLogo } from '../GlowbieBellLogo';
 
 interface LoginRegisterScreenProps {
   onLogin: () => void;
@@ -441,138 +441,9 @@ export function LoginRegisterScreen({ onLogin, onForgotPassword }: LoginRegister
         >
           {/* Logo & Welcome */}
           <div className="text-center mb-8">
-            <motion.div 
-              className="mb-4 flex items-center justify-center relative"
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ 
-                opacity: 1, 
-                y: 0,
-              }}
-              transition={{ 
-                duration: 0.8, 
-                ease: "easeOut",
-                delay: 0.1
-              }}
-            >
-              {/* Floating emojis around logo */}
-              <motion.div
-                className="absolute text-2xl"
-                style={{ top: '-10px', left: '20px' }}
-                animate={{ 
-                  y: [0, -10, 0],
-                  rotate: [0, 10, 0]
-                }}
-                transition={{
-                  duration: 3.5,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 0
-                }}
-              >
-                ✨
-              </motion.div>
-
-              <motion.div
-                className="absolute text-xl"
-                style={{ top: '10px', right: '15px' }}
-                animate={{ 
-                  y: [0, -8, 0],
-                  rotate: [0, -15, 0]
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 0.5
-                }}
-              >
-                💫
-              </motion.div>
-
-              <motion.div
-                className="absolute text-xl"
-                style={{ bottom: '20px', left: '15px' }}
-                animate={{ 
-                  y: [0, -12, 0],
-                  rotate: [0, 12, 0]
-                }}
-                transition={{
-                  duration: 4,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 1
-                }}
-              >
-                ⭐
-              </motion.div>
-
-              <motion.div
-                className="absolute text-2xl"
-                style={{ bottom: '10px', right: '20px' }}
-                animate={{ 
-                  y: [0, -10, 0],
-                  rotate: [0, -10, 0],
-                  scale: [1, 1.1, 1]
-                }}
-                transition={{
-                  duration: 3.2,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 1.5
-                }}
-              >
-                🌟
-              </motion.div>
-
-              <motion.div
-                className="absolute text-lg"
-                style={{ top: '50%', left: '0px' }}
-                animate={{ 
-                  x: [-3, 3, -3],
-                  opacity: [0.6, 1, 0.6]
-                }}
-                transition={{
-                  duration: 2.5,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 0.8
-                }}
-              >
-                💖
-              </motion.div>
-
-              <motion.div
-                className="absolute text-lg"
-                style={{ top: '50%', right: '0px' }}
-                animate={{ 
-                  x: [3, -3, 3],
-                  opacity: [0.6, 1, 0.6]
-                }}
-                transition={{
-                  duration: 2.8,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 1.2
-                }}
-              >
-                ✨
-              </motion.div>
-
-              {/* Main Logo */}
-              <motion.img
-                src={logoImage}
-                alt="GlowbieBell Logo"
-                className="w-48 h-48 relative z-10"
-                animate={{ 
-                  y: [0, -8, 0],
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-              />
-            </motion.div>
+            <div className="mb-4 flex items-center justify-center">
+              <GlowbieBellLogo size={192} animated={true} />
+            </div>
             
             <motion.h1 
               initial={{ opacity: 0 }}

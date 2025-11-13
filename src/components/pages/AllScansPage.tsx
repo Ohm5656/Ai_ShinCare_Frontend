@@ -27,7 +27,7 @@ export function AllScansPage({ onBack, onViewScanDetail }: AllScansPageProps) {
       score: 87,
       improvement: '+2',
       thumbnail: '🌸',
-      topIssue: t.excellentHydration,
+      topIssue: t.language === 'th' ? 'ความสม่ำเสมอดีเยี่ยม' : t.language === 'en' ? 'Excellent evenness' : '均匀度极佳',
       category: 'thisWeek'
     },
     {
@@ -36,7 +36,7 @@ export function AllScansPage({ onBack, onViewScanDetail }: AllScansPageProps) {
       score: 85,
       improvement: '+1',
       thumbnail: '🌺',
-      topIssue: t.goodTexture,
+      topIssue: t.language === 'th' ? 'รูขุมขนดีขึ้น' : t.language === 'en' ? 'Pores improved' : '毛孔改善',
       category: 'thisWeek'
     },
     {

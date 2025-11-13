@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { ArrowLeft, Calendar, TrendingUp, Sparkles, CheckCircle, AlertCircle, Waves, Flame, Palette, Droplets, Moon, CircleDot } from 'lucide-react';
+import { ArrowLeft, Calendar, TrendingUp, Sparkles, CheckCircle, AlertCircle, Waves, Flame, Palette, Droplets, Moon, CircleDot, ChevronsDown, Circle } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 import { Badge } from '../ui/badge';
@@ -15,11 +15,12 @@ export interface ScanDetail {
   topIssue: string;
   metrics: {
     wrinkles: number;
-    redness: number;
-    tone: number;
-    oil: number;
-    eyeBags: number;
+    sagging: number;
+    darkSpots: number;
     acne: number;
+    redness: number;
+    pores: number;
+    evenness: number;
   };
 }
 
@@ -33,11 +34,12 @@ export function ScanDetailPage({ scanData, onBack }: ScanDetailPageProps) {
   
   const radarData = [
     { subject: t.wrinkles, value: scanData.metrics.wrinkles, fullMark: 100 },
-    { subject: t.redness, value: scanData.metrics.redness, fullMark: 100 },
-    { subject: t.skinTone, value: scanData.metrics.tone, fullMark: 100 },
-    { subject: t.oiliness, value: scanData.metrics.oil, fullMark: 100 },
-    { subject: t.eyeBags, value: scanData.metrics.eyeBags, fullMark: 100 },
+    { subject: t.sagging, value: scanData.metrics.sagging, fullMark: 100 },
+    { subject: t.darkSpots, value: scanData.metrics.darkSpots, fullMark: 100 },
     { subject: t.acne, value: scanData.metrics.acne, fullMark: 100 },
+    { subject: t.redness, value: scanData.metrics.redness, fullMark: 100 },
+    { subject: t.pores, value: scanData.metrics.pores, fullMark: 100 },
+    { subject: t.skinEvenness, value: scanData.metrics.evenness, fullMark: 100 },
   ];
 
   const metricDetails = [
@@ -49,39 +51,46 @@ export function ScanDetailPage({ scanData, onBack }: ScanDetailPageProps) {
       status: scanData.metrics.wrinkles >= 80 ? t.good : scanData.metrics.wrinkles >= 60 ? t.normal : t.needsImprovement
     },
     {
-      label: t.redness,
-      value: scanData.metrics.redness,
-      icon: Flame,
-      color: 'pink',
-      status: scanData.metrics.redness >= 80 ? t.good : scanData.metrics.redness >= 60 ? t.normal : t.needsImprovement
-    },
-    {
-      label: t.skinTone,
-      value: scanData.metrics.tone,
-      icon: Palette,
-      color: 'peach',
-      status: scanData.metrics.tone >= 80 ? t.veryGoodStatus : scanData.metrics.tone >= 60 ? t.normal : t.needsImprovement
-    },
-    {
-      label: t.oiliness,
-      value: scanData.metrics.oil,
-      icon: Droplets,
+      label: t.sagging,
+      value: scanData.metrics.sagging,
+      icon: ChevronsDown,
       color: 'blue',
-      status: scanData.metrics.oil >= 80 ? t.good : scanData.metrics.oil >= 60 ? t.fairStatus : t.needsImprovement
+      status: scanData.metrics.sagging >= 80 ? t.good : scanData.metrics.sagging >= 60 ? t.normal : t.needsImprovement
     },
     {
-      label: t.eyeBags,
-      value: scanData.metrics.eyeBags,
-      icon: Moon,
-      color: 'lavender',
-      status: scanData.metrics.eyeBags >= 80 ? t.good : scanData.metrics.eyeBags >= 60 ? t.normal : t.needsImprovement
+      label: t.darkSpots,
+      value: scanData.metrics.darkSpots,
+      icon: CircleDot,
+      color: 'amber',
+      status: scanData.metrics.darkSpots >= 80 ? t.good : scanData.metrics.darkSpots >= 60 ? t.normal : t.needsImprovement
     },
     {
       label: t.acne,
       value: scanData.metrics.acne,
-      icon: CircleDot,
+      icon: Sparkles,
       color: 'purple',
       status: scanData.metrics.acne >= 80 ? t.good : scanData.metrics.acne >= 60 ? t.normal : t.needsImprovement
+    },
+    {
+      label: t.redness,
+      value: scanData.metrics.redness,
+      icon: Flame,
+      color: 'rose',
+      status: scanData.metrics.redness >= 80 ? t.good : scanData.metrics.redness >= 60 ? t.normal : t.needsImprovement
+    },
+    {
+      label: t.pores,
+      value: scanData.metrics.pores,
+      icon: Circle,
+      color: 'cyan',
+      status: scanData.metrics.pores >= 80 ? t.good : scanData.metrics.pores >= 60 ? t.normal : t.needsImprovement
+    },
+    {
+      label: t.skinEvenness,
+      value: scanData.metrics.evenness,
+      icon: Palette,
+      color: 'yellow',
+      status: scanData.metrics.evenness >= 80 ? t.veryGoodStatus : scanData.metrics.evenness >= 60 ? t.normal : t.needsImprovement
     },
   ];
 
@@ -225,10 +234,13 @@ export function ScanDetailPage({ scanData, onBack }: ScanDetailPageProps) {
               const colorClasses = {
                 mint: { bg: 'bg-mint-100', text: 'text-mint-700', gradient: 'from-mint-400 to-mint-500' },
                 pink: { bg: 'bg-pink-100', text: 'text-pink-700', gradient: 'from-pink-400 to-pink-500' },
-                peach: { bg: 'bg-peach-100', text: 'text-peach-700', gradient: 'from-peach-400 to-peach-500' },
+                rose: { bg: 'bg-rose-100', text: 'text-rose-700', gradient: 'from-rose-400 to-rose-500' },
                 blue: { bg: 'bg-blue-100', text: 'text-blue-700', gradient: 'from-blue-400 to-blue-500' },
                 lavender: { bg: 'bg-lavender-100', text: 'text-lavender-700', gradient: 'from-lavender-400 to-lavender-500' },
                 purple: { bg: 'bg-purple-100', text: 'text-purple-700', gradient: 'from-purple-400 to-purple-500' },
+                amber: { bg: 'bg-amber-100', text: 'text-amber-700', gradient: 'from-amber-400 to-amber-500' },
+                cyan: { bg: 'bg-cyan-100', text: 'text-cyan-700', gradient: 'from-cyan-400 to-cyan-500' },
+                yellow: { bg: 'bg-yellow-100', text: 'text-yellow-700', gradient: 'from-yellow-400 to-yellow-500' },
               };
               const colors = colorClasses[metric.color as keyof typeof colorClasses];
 

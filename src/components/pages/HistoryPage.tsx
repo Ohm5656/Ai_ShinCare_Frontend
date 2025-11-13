@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { 
   TrendingUp, Calendar, Award, ChevronRight, 
   Image as ImageIcon, Sparkles, Waves, Flame, 
-  Palette, Droplets, Moon, CircleDot
+  Palette, Droplets, Moon, CircleDot, ChevronsDown, Circle
 } from 'lucide-react';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
@@ -28,32 +28,32 @@ export function HistoryPage({ userName = 'Suda', onViewScanDetail, onViewAllScan
   // Mock data for different timeframes - 6 metrics ตรงกับหน้า Analysis
   const progressData = {
     '7days': [
-      { date: t.dayMon, overall: 82, wrinkles: 83, redness: 70, tone: 86, oil: 80, eyeBags: 76, acne: 80 },
-      { date: t.dayTue, overall: 83, wrinkles: 84, redness: 71, tone: 87, oil: 78, eyeBags: 77, acne: 81 },
-      { date: t.dayWed, overall: 84, wrinkles: 84, redness: 71, tone: 87, oil: 76, eyeBags: 77, acne: 81 },
-      { date: t.dayThu, overall: 85, wrinkles: 85, redness: 72, tone: 88, oil: 74, eyeBags: 78, acne: 82 },
-      { date: t.dayFri, overall: 86, wrinkles: 85, redness: 72, tone: 88, oil: 70, eyeBags: 78, acne: 82 },
-      { date: t.daySat, overall: 86, wrinkles: 85, redness: 72, tone: 88, oil: 68, eyeBags: 78, acne: 82 },
-      { date: t.daySun, overall: 87, wrinkles: 85, redness: 72, tone: 88, oil: 65, eyeBags: 78, acne: 82 },
+      { date: t.dayMon, overall: 82, wrinkles: 83, sagging: 79, darkSpots: 74, acne: 80, redness: 70, pores: 75, evenness: 86 },
+      { date: t.dayTue, overall: 83, wrinkles: 84, sagging: 80, darkSpots: 75, acne: 81, redness: 71, pores: 76, evenness: 87 },
+      { date: t.dayWed, overall: 84, wrinkles: 84, sagging: 80, darkSpots: 75, acne: 81, redness: 71, pores: 76, evenness: 87 },
+      { date: t.dayThu, overall: 85, wrinkles: 85, sagging: 81, darkSpots: 76, acne: 82, redness: 72, pores: 77, evenness: 88 },
+      { date: t.dayFri, overall: 86, wrinkles: 85, sagging: 81, darkSpots: 76, acne: 82, redness: 72, pores: 77, evenness: 88 },
+      { date: t.daySat, overall: 86, wrinkles: 85, sagging: 81, darkSpots: 76, acne: 82, redness: 72, pores: 78, evenness: 88 },
+      { date: t.daySun, overall: 87, wrinkles: 85, sagging: 82, darkSpots: 77, acne: 82, redness: 72, pores: 78, evenness: 88 },
     ],
     '15days': [
-      { date: '1', overall: 75, wrinkles: 78, redness: 68, tone: 82, oil: 88, eyeBags: 72, acne: 76 },
-      { date: '3', overall: 77, wrinkles: 79, redness: 69, tone: 83, oil: 86, eyeBags: 73, acne: 77 },
-      { date: '5', overall: 78, wrinkles: 80, redness: 69, tone: 84, oil: 85, eyeBags: 74, acne: 78 },
-      { date: '7', overall: 80, wrinkles: 82, redness: 70, tone: 85, oil: 83, eyeBags: 75, acne: 79 },
-      { date: '9', overall: 82, wrinkles: 83, redness: 70, tone: 86, oil: 80, eyeBags: 76, acne: 80 },
-      { date: '11', overall: 84, wrinkles: 84, redness: 71, tone: 87, oil: 76, eyeBags: 77, acne: 81 },
-      { date: '13', overall: 85, wrinkles: 85, redness: 72, tone: 88, oil: 70, eyeBags: 78, acne: 82 },
-      { date: '15', overall: 87, wrinkles: 85, redness: 72, tone: 88, oil: 65, eyeBags: 78, acne: 82 },
+      { date: '1', overall: 75, wrinkles: 78, sagging: 75, darkSpots: 70, acne: 76, redness: 68, pores: 71, evenness: 82 },
+      { date: '3', overall: 77, wrinkles: 79, sagging: 76, darkSpots: 71, acne: 77, redness: 69, pores: 72, evenness: 83 },
+      { date: '5', overall: 78, wrinkles: 80, sagging: 77, darkSpots: 72, acne: 78, redness: 69, pores: 73, evenness: 84 },
+      { date: '7', overall: 80, wrinkles: 82, sagging: 78, darkSpots: 73, acne: 79, redness: 70, pores: 74, evenness: 85 },
+      { date: '9', overall: 82, wrinkles: 83, sagging: 79, darkSpots: 74, acne: 80, redness: 70, pores: 75, evenness: 86 },
+      { date: '11', overall: 84, wrinkles: 84, sagging: 80, darkSpots: 75, acne: 81, redness: 71, pores: 76, evenness: 87 },
+      { date: '13', overall: 85, wrinkles: 85, sagging: 81, darkSpots: 76, acne: 82, redness: 72, pores: 77, evenness: 88 },
+      { date: '15', overall: 87, wrinkles: 85, sagging: 82, darkSpots: 77, acne: 82, redness: 72, pores: 78, evenness: 88 },
     ],
     '30days': [
-      { date: '1', overall: 70, wrinkles: 73, redness: 65, tone: 78, oil: 92, eyeBags: 68, acne: 72 },
-      { date: '5', overall: 72, wrinkles: 75, redness: 66, tone: 80, oil: 90, eyeBags: 70, acne: 74 },
-      { date: '10', overall: 75, wrinkles: 78, redness: 68, tone: 82, oil: 88, eyeBags: 72, acne: 76 },
-      { date: '15', overall: 78, wrinkles: 80, redness: 69, tone: 84, oil: 85, eyeBags: 74, acne: 78 },
-      { date: '20', overall: 82, wrinkles: 83, redness: 70, tone: 86, oil: 80, eyeBags: 76, acne: 80 },
-      { date: '25', overall: 85, wrinkles: 85, redness: 72, tone: 88, oil: 70, eyeBags: 78, acne: 82 },
-      { date: '30', overall: 87, wrinkles: 85, redness: 72, tone: 88, oil: 65, eyeBags: 78, acne: 82 },
+      { date: '1', overall: 70, wrinkles: 73, sagging: 70, darkSpots: 65, acne: 72, redness: 65, pores: 66, evenness: 78 },
+      { date: '5', overall: 72, wrinkles: 75, sagging: 72, darkSpots: 67, acne: 74, redness: 66, pores: 68, evenness: 80 },
+      { date: '10', overall: 75, wrinkles: 78, sagging: 75, darkSpots: 70, acne: 76, redness: 68, pores: 71, evenness: 82 },
+      { date: '15', overall: 78, wrinkles: 80, sagging: 77, darkSpots: 72, acne: 78, redness: 69, pores: 73, evenness: 84 },
+      { date: '20', overall: 82, wrinkles: 83, sagging: 79, darkSpots: 74, acne: 80, redness: 70, pores: 75, evenness: 86 },
+      { date: '25', overall: 85, wrinkles: 85, sagging: 81, darkSpots: 76, acne: 82, redness: 72, pores: 77, evenness: 88 },
+      { date: '30', overall: 87, wrinkles: 85, sagging: 82, darkSpots: 77, acne: 82, redness: 72, pores: 78, evenness: 88 },
     ]
   };
 
@@ -87,11 +87,12 @@ export function HistoryPage({ userName = 'Suda', onViewScanDetail, onViewAllScan
   const metrics = [
     { id: 'overall', label: t.overview, icon: TrendingUp, color: '#FF99CB', gradient: 'from-pink-400 to-pink-500' },
     { id: 'wrinkles', label: t.wrinkles, icon: Waves, color: '#73FFA3', gradient: 'from-mint-400 to-mint-500' },
-    { id: 'redness', label: t.redness, icon: Flame, color: '#FFB5D9', gradient: 'from-pink-300 to-pink-400' },
-    { id: 'tone', label: t.skinTone, icon: Palette, color: '#FFB350', gradient: 'from-peach-400 to-peach-500' },
-    { id: 'oil', label: t.oiliness, icon: Droplets, color: '#7DB8FF', gradient: 'from-blue-400 to-blue-500' },
-    { id: 'eyeBags', label: t.eyeBags, icon: Moon, color: '#CBB8FF', gradient: 'from-lavender-400 to-lavender-500' },
-    { id: 'acne', label: t.acne, icon: CircleDot, color: '#B79DFF', gradient: 'from-lavender-300 to-lavender-400' },
+    { id: 'sagging', label: t.sagging, icon: ChevronsDown, color: '#7DB8FF', gradient: 'from-blue-400 to-blue-500' },
+    { id: 'darkSpots', label: t.darkSpots, icon: CircleDot, color: '#FFB350', gradient: 'from-amber-400 to-amber-500' },
+    { id: 'acne', label: t.acne, icon: Sparkles, color: '#B79DFF', gradient: 'from-purple-400 to-purple-500' },
+    { id: 'redness', label: t.redness, icon: Flame, color: '#FF8B94', gradient: 'from-rose-400 to-rose-500' },
+    { id: 'pores', label: t.pores, icon: Circle, color: '#6DD5ED', gradient: 'from-cyan-400 to-cyan-500' },
+    { id: 'evenness', label: t.skinEvenness, icon: Palette, color: '#FED766', gradient: 'from-yellow-400 to-yellow-500' },
   ];
 
   const pastScans = [
@@ -101,7 +102,7 @@ export function HistoryPage({ userName = 'Suda', onViewScanDetail, onViewAllScan
       score: 87,
       improvement: '+2',
       thumbnail: '🌸',
-      topIssue: t.excellentHydration,
+      topIssue: t.language === 'th' ? 'ความสม่ำเสมอดีเยี่ยม' : t.language === 'en' ? 'Excellent evenness' : '均匀度极佳',
     },
     {
       id: 2,
@@ -109,7 +110,7 @@ export function HistoryPage({ userName = 'Suda', onViewScanDetail, onViewAllScan
       score: 85,
       improvement: '+1',
       thumbnail: '🌺',
-      topIssue: t.goodTexture,
+      topIssue: t.language === 'th' ? 'รูขุมขนดีขึ้น' : t.language === 'en' ? 'Pores improved' : '毛孔改善',
     },
     {
       id: 3,

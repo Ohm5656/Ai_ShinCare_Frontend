@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Check, Droplet, Zap, Frown, Sun, Wrench, Sparkles, ChevronRight, User, Calendar, Droplets, AlertCircle } from 'lucide-react';
+import { Check, Droplet, Zap, Frown, Sun, Wrench, Sparkles, ChevronRight, User, Calendar, Droplets, AlertCircle, MoveDown, CircleDot } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { FloatingParticles } from '../animations/FloatingParticles';
 
@@ -35,7 +35,7 @@ export function PreAnalysisChat({ onComplete }: PreAnalysisChatProps) {
     {
       id: 'acne',
       icon: <Zap className="w-5 h-5" />,
-      color: '#FFB5D9',
+      color: '#B79DFF',
       labelTh: 'สิว/รอยสิว',
       labelEn: 'Acne & Scars',
       labelZh: '痘痘/痘印',
@@ -43,42 +43,50 @@ export function PreAnalysisChat({ onComplete }: PreAnalysisChatProps) {
     {
       id: 'wrinkles',
       icon: <Wrench className="w-5 h-5" />,
-      color: '#7DB8FF',
+      color: '#73FFA3',
       labelTh: 'ริ้วรอย',
       labelEn: 'Wrinkles',
       labelZh: '皱纹',
     },
     {
+      id: 'sagging',
+      icon: <MoveDown className="w-5 h-5" />,
+      color: '#7DB8FF',
+      labelTh: 'ความหย่อนคล้อย',
+      labelEn: 'Sagging',
+      labelZh: '松弛下垂',
+    },
+    {
+      id: 'darkSpots',
+      icon: <Sun className="w-5 h-5" />,
+      color: '#FFB350',
+      labelTh: 'ฝ้า กระ จุดด่างดำ',
+      labelEn: 'Dark Spots',
+      labelZh: '色斑 黑斑',
+    },
+    {
       id: 'redness',
       icon: <Frown className="w-5 h-5" />,
-      color: '#FFB5D9',
-      labelTh: 'ความแดง',
+      color: '#FF8B94',
+      labelTh: 'ผิวแดง',
       labelEn: 'Redness',
-      labelZh: '红血丝',
+      labelZh: '泛红',
     },
     {
-      id: 'oiliness',
-      icon: <Droplet className="w-5 h-5" />,
-      color: '#7DB8FF',
-      labelTh: 'ความมัน',
-      labelEn: 'Oiliness',
-      labelZh: '油性',
+      id: 'pores',
+      icon: <CircleDot className="w-5 h-5" />,
+      color: '#6DD5ED',
+      labelTh: 'รูขุมขน',
+      labelEn: 'Pores',
+      labelZh: '毛孔',
     },
     {
-      id: 'dryness',
-      icon: <Sun className="w-5 h-5" />,
-      color: '#CBB8FF',
-      labelTh: 'ความแห้ง',
-      labelEn: 'Dryness',
-      labelZh: '干燥',
-    },
-    {
-      id: 'pigmentation',
+      id: 'skinEvenness',
       icon: <Sparkles className="w-5 h-5" />,
-      color: '#FFB5D9',
-      labelTh: 'ฝ้า/กระ',
-      labelEn: 'Dark Spots',
-      labelZh: '色斑',
+      color: '#FED766',
+      labelTh: 'ความสม่ำเสมอของโทนผิว',
+      labelEn: 'Skin Evenness',
+      labelZh: '肤色均匀度',
     },
   ];
 

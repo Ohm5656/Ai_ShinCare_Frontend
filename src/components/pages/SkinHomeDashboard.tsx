@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Camera, Sparkles, Heart, BarChart3, CircleDot, Waves, Flame, Palette, Droplets, Moon } from 'lucide-react';
+import { Camera, Sparkles, Heart, BarChart3, CircleDot, Waves, Flame, Palette, Droplets, Moon, ChevronsDown, Circle, Grid } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
@@ -28,43 +28,25 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
       iconColor: 'text-mint-600',
     },
     {
-      icon: Flame,
-      label: t.redness,
-      score: 72,
-      status: t.normal,
-      color: 'bg-pink-100 text-pink-700',
-      gradient: 'from-pink-400 to-pink-500',
-      iconColor: 'text-pink-600',
-    },
-    {
-      icon: Palette,
-      label: t.skinTone,
-      score: 88,
-      status: t.veryGood,
-      color: 'bg-peach-100 text-peach-700',
-      gradient: 'from-peach-400 to-peach-500',
-      iconColor: 'text-peach-600',
-    },
-    {
-      icon: Droplets,
-      label: t.oiliness,
-      score: 65,
-      status: t.fair,
+      icon: ChevronsDown,
+      label: t.sagging,
+      score: 80,
+      status: t.good,
       color: 'bg-blue-100 text-blue-700',
       gradient: 'from-blue-400 to-blue-500',
       iconColor: 'text-blue-600',
     },
     {
-      icon: Moon,
-      label: t.eyeBags,
-      score: 78,
+      icon: CircleDot,
+      label: t.darkSpots,
+      score: 75,
       status: t.normal,
-      color: 'bg-lavender-100 text-lavender-700',
-      gradient: 'from-lavender-400 to-lavender-500',
-      iconColor: 'text-lavender-600',
+      color: 'bg-amber-100 text-amber-700',
+      gradient: 'from-amber-400 to-amber-500',
+      iconColor: 'text-amber-600',
     },
     {
-      icon: CircleDot,
+      icon: Sparkles,
       label: t.acne,
       score: 82,
       status: t.good,
@@ -72,21 +54,49 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
       gradient: 'from-purple-400 to-purple-500',
       iconColor: 'text-purple-600',
     },
+    {
+      icon: Flame,
+      label: t.redness,
+      score: 72,
+      status: t.normal,
+      color: 'bg-rose-100 text-rose-700',
+      gradient: 'from-rose-400 to-rose-500',
+      iconColor: 'text-rose-600',
+    },
+    {
+      icon: Circle,
+      label: t.pores,
+      score: 70,
+      status: t.normal,
+      color: 'bg-cyan-100 text-cyan-700',
+      gradient: 'from-cyan-400 to-cyan-500',
+      iconColor: 'text-cyan-600',
+    },
+    {
+      icon: Palette,
+      label: t.skinEvenness,
+      score: 88,
+      status: t.veryGood,
+      color: 'bg-yellow-100 text-yellow-700',
+      gradient: 'from-yellow-400 to-yellow-500',
+      iconColor: 'text-yellow-600',
+    },
   ];
 
-  // Prepare data for radar chart
+  // Prepare data for radar chart - 7 metrics
   const radarData = [
     { subject: t.wrinklesShort, value: 85 },
-    { subject: t.rednessShort, value: 72 },
-    { subject: t.skinToneShort, value: 88 },
-    { subject: t.oilinessShort, value: 65 },
-    { subject: t.eyeBagsShort, value: 78 },
+    { subject: t.saggingShort, value: 80 },
+    { subject: t.darkSpotsShort, value: 75 },
     { subject: t.acneShort, value: 82 },
+    { subject: t.rednessShort, value: 72 },
+    { subject: t.poresShort, value: 70 },
+    { subject: t.skinEvennessShort, value: 88 },
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-lavender-50 to-blue-50 pb-28 relative">
-      {/* Simplified decorations - Remove heavy animations */}
+      {/* Simplified decorations - Removed heavy animations */}
       <div className="absolute top-20 right-10 text-pink-200/50 pointer-events-none">
         <Heart className="w-16 h-16" fill="currentColor" />
       </div>
@@ -100,7 +110,7 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
         >
           <p className="text-gray-500 text-sm mb-1">{t.homeGreeting}</p>
           <h2 className="text-gray-800 mb-2">{t.userName}{userName}</h2>
@@ -108,46 +118,44 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
         </motion.div>
       </div>
 
-      {/* Skin Score Card - Cute Version */}
+      {/* Skin Score Card - Optimized Version */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
+        initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.2, duration: 0.6, type: "spring" }}
+        transition={{ delay: 0.1, duration: 0.4 }}
         className="px-6 mb-6 relative z-10"
       >
         <div className="bg-white rounded-[32px] p-8 shadow-cute-xl border border-pink-100 relative overflow-hidden">
-          {/* Decorative elements - Removed blur for performance */}
+          {/* Decorative elements */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-pink-100 to-transparent rounded-full opacity-50"></div>
           <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-blue-100 to-transparent rounded-full opacity-50"></div>
           
           <div className="relative">
-            {/* Toggle Button */}
+            {/* Toggle Button - Simplified animation */}
             <div className="absolute -top-2 -right-2 z-20">
-              <motion.button
+              <button
                 onClick={() => setViewMode(viewMode === 'circular' ? 'radar' : 'circular')}
-                className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 to-blue-400 flex items-center justify-center shadow-cute-md hover:shadow-cute-lg hover:scale-110 transition-all duration-300"
-                whileHover={{ rotate: 180 }}
-                whileTap={{ scale: 0.9 }}
+                className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 to-blue-400 flex items-center justify-center shadow-cute-md hover:shadow-cute-lg hover:scale-110 transition-all duration-200"
               >
                 {viewMode === 'circular' ? (
                   <BarChart3 className="w-5 h-5 text-white" />
                 ) : (
                   <CircleDot className="w-5 h-5 text-white" />
                 )}
-              </motion.button>
+              </button>
             </div>
 
             <AnimatePresence mode="wait">
               {viewMode === 'circular' ? (
                 <motion.div
                   key="circular"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ duration: 0.3 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
                 >
                   <div className="relative w-56 h-56 mx-auto mb-6">
-                    {/* Outer glow - Removed blur for performance */}
+                    {/* Outer glow */}
                     <div className="absolute inset-0 bg-gradient-to-br from-pink-200 to-blue-200 rounded-full opacity-30"></div>
                     
                     {/* SVG Circle */}
@@ -171,7 +179,7 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
                         strokeLinecap="round"
                       />
                       
-                      {/* Progress circle */}
+                      {/* Progress circle - Optimized animation */}
                       <motion.circle
                         cx="112"
                         cy="112"
@@ -183,16 +191,16 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
                         strokeLinecap="round"
                         initial={{ strokeDasharray: "0 628" }}
                         animate={{ strokeDasharray: `${(skinScore / 100) * 628} 628` }}
-                        transition={{ duration: 1.5, ease: "easeOut", delay: 0.5 }}
+                        transition={{ duration: 1, ease: "easeOut", delay: 0.3 }}
                       />
                     </svg>
                     
                     {/* Center Content */}
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                       <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: 0.8, type: "spring", stiffness: 200 }}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.4, duration: 0.3 }}
                       >
                         <div className="bg-gradient-to-r from-pink-500 via-lavender-500 to-blue-500 bg-clip-text text-transparent text-sm mb-1 flex items-center gap-1">
                           <Sparkles className="w-4 h-4 text-pink-500" />
@@ -209,7 +217,7 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
                   <motion.p 
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: 1 }}
+                    transition={{ delay: 0.5, duration: 0.3 }}
                     className="text-gray-600 text-center"
                   >
                     {t.skinHealthy}
@@ -218,10 +226,10 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
               ) : (
                 <motion.div
                   key="radar"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ duration: 0.3 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
                 >
                   <h3 className="text-center text-gray-700 mb-4">
                     {t.analysisOverviewTitle}
@@ -344,7 +352,7 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
         ))}
       </div>
 
-      {/* CTA Button - Extra Cute */}
+      {/* CTA Button - Optimized version */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -352,37 +360,20 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
         className="px-6 relative z-10"
       >
         <motion.div
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          transition={{ type: "spring", stiffness: 400, damping: 25 }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          transition={{ duration: 0.2 }}
         >
           <Button
             onClick={onStartScan}
-            className="w-full h-16 rounded-[28px] bg-gradient-to-r from-pink-400 via-lavender-400 to-blue-400 hover:from-pink-500 hover:via-lavender-500 hover:to-blue-500 text-white shadow-cute-xl hover:shadow-cute-xl transition-shadow duration-300 text-lg font-semibold relative overflow-hidden group"
+            className="w-full h-16 rounded-[28px] bg-gradient-to-r from-pink-400 via-lavender-400 to-blue-400 hover:from-pink-500 hover:via-lavender-500 hover:to-blue-500 text-white shadow-cute-xl hover:shadow-cute-xl transition-all duration-200 text-lg font-semibold relative overflow-hidden group"
           >
-            <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-            <motion.div
-              className="relative z-10 flex items-center justify-center"
-              whileHover={{ x: [0, -3, 3, -3, 0] }}
-              transition={{ duration: 0.5 }}
-            >
-              <motion.div
-                animate={{ rotate: [0, -10, 10, -10, 0] }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              >
-                <Camera className="w-6 h-6 mr-2" />
-              </motion.div>
+            <div className="absolute inset-0 bg-white/20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-500"></div>
+            <div className="relative z-10 flex items-center justify-center">
+              <Camera className="w-6 h-6 mr-2" />
               <span>{t.startScan}</span>
-              <motion.div
-                animate={{ 
-                  scale: [1, 1.2, 1],
-                  rotate: [0, 180, 360]
-                }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              >
-                <Sparkles className="w-5 h-5 ml-2" />
-              </motion.div>
-            </motion.div>
+              <Sparkles className="w-5 h-5 ml-2" />
+            </div>
           </Button>
         </motion.div>
         

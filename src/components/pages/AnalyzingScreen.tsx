@@ -1,63 +1,121 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
-import { useLanguage } from '../../contexts/LanguageContext';
-import { GlowbieBellLogo } from '../GlowbieBellLogo';
+import { useState, useEffect } from "react";
+import { motion } from "motion/react";
+import { useLanguage } from "../../contexts/LanguageContext";
+import { GlowbieBellLogo } from "../GlowbieBellLogo";
 
 interface AnalyzingScreenProps {
-  onComplete: () => void;
-  capturedImages?: {
-    front: string | null;
-    left: string | null;
-    right: string | null;
-  };
+  onComplete: (result?: any) => void;
+  capturedImages?: { front: string | null; left: string | null; right: string | null };
   userConcerns?: string[];
+  userData?: { gender?: string; age?: string; skinType?: string; isSensitive?: boolean };
 }
 
-export function AnalyzingScreen({ onComplete, capturedImages, userConcerns }: AnalyzingScreenProps) {
+// ✨ เพิ่ม type ตรงนี้
+type SkinAnalyzeResponse = {
+  overall_score: number;
+  dimension_scores: Record<string, number>;
+  weighted_contrib: Record<string, number>;
+  mode: string;
+  highlights_short: string[];
+  improvements_short: string[];
+  ai_advice: string;
+  profile: {
+    sex: string;
+    age_range: string;
+    skin_type: string;
+    sensitive: boolean;
+    concerns: string;
+  };
+};
+
+export function AnalyzingScreen({
+  onComplete,
+  capturedImages,
+  userConcerns,
+  userData,
+}: AnalyzingScreenProps) {
   const { t } = useLanguage();
   const [progress, setProgress] = useState(0);
   const [analyzingImageIndex, setAnalyzingImageIndex] = useState(0);
   const [currentPhase, setCurrentPhase] = useState(0);
+  const [aiResult, setAiResult] = useState<SkinAnalyzeResponse | null>(null);
 
   const phases = [
-    {
-      labelTh: 'กำลังประมวลผลภาพ...',
-      labelEn: 'Processing images...',
-      labelZh: '正在处理图片...',
-    },
-    {
-      labelTh: 'กำลังวิเคราะห์ลักษณะผิว...',
-      labelEn: 'Analyzing skin features...',
-      labelZh: '正在分析皮肤特征...',
-    },
-    {
-      labelTh: 'กำลังประเมินสภาพผิว...',
-      labelEn: 'Evaluating skin condition...',
-      labelZh: '正在评估皮肤状况...',
-    },
-    {
-      labelTh: 'กำลังสร้างคำแนะนำ...',
-      labelEn: 'Generating recommendations...',
-      labelZh: '正在生成建议...',
-    },
+    { labelTh: "กำลังประมวลผลภาพ...", labelEn: "Processing images...", labelZh: "正在处理图片..." },
+    { labelTh: "กำลังวิเคราะห์ลักษณะผิว...", labelEn: "Analyzing skin features...", labelZh: "正在分析皮肤特征..." },
+    { labelTh: "กำลังประเมินสภาพผิว...", labelEn: "Evaluating skin condition...", labelZh: "正在评估皮肤状况..." },
+    { labelTh: "กำลังสร้างคำแนะนำ...", labelEn: "Generating recommendations...", labelZh: "正在生成建议..." },
   ];
 
   const getPhaseLabel = () => {
     const phase = phases[currentPhase];
-    if (t.language === 'th') return phase.labelTh;
-    if (t.language === 'en') return phase.labelEn;
+    if (t.language === "th") return phase.labelTh;
+    if (t.language === "en") return phase.labelEn;
     return phase.labelZh;
   };
 
-  // Progress animation
+  // =====================================================================================
+  // 🚀 ส่งภาพไป backend เมื่อ mount
+  // =====================================================================================
+  useEffect(() => {
+    async function sendImagesToBackend() {
+      if (!capturedImages?.front || !capturedImages?.left || !capturedImages?.right) {
+        console.warn("⚠️ capturedImages ยังไม่ครบ 3 มุม");
+        return;
+      }
+
+      try {
+        const blobFront = await (await fetch(capturedImages.front)).blob();
+        const blobLeft = await (await fetch(capturedImages.left)).blob();
+        const blobRight = await (await fetch(capturedImages.right)).blob();
+
+        const formData = new FormData();
+        formData.append("img_front", blobFront, "front.jpg");
+        formData.append("img_left", blobLeft, "left.jpg");
+        formData.append("img_right", blobRight, "right.jpg");
+        formData.append("sex", userData?.gender || "female");
+        formData.append("age_range", userData?.age || "25-34");
+        formData.append("skin_type", userData?.skinType || "combination");
+        formData.append("sensitive", String(!!userData?.isSensitive));
+        formData.append("concerns", (userConcerns || []).join(","));
+
+        console.log("📤 กำลังส่งภาพไป backend...");
+        const res = await fetch("http://localhost:8000/analyze-face-full", {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await res.json();
+        console.log("📥 ผลลัพธ์จาก backend:", data);
+
+        if (data?.overall_score !== undefined) {
+          setAiResult(data as SkinAnalyzeResponse);
+        } else {
+          console.warn("⚠️ รูปแบบผลลัพธ์ไม่ตรงที่คาด:", data);
+        }
+      } catch (err) {
+        console.error("❌ ส่งภาพไม่สำเร็จ:", err);
+      }
+    }
+
+    sendImagesToBackend();
+  }, [capturedImages, userConcerns, userData]);
+
+  // =====================================================================================
+  // 🔄 Progress bar เดินจนถึง 100 แล้วเรียก onComplete(result)
+  // =====================================================================================
   useEffect(() => {
     const interval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
           clearInterval(interval);
           setTimeout(() => {
-            onComplete();
-          }, 500);
+            if (aiResult) {
+              onComplete(aiResult); // ✅ ส่งผลลัพธ์จริง
+            } else {
+              console.warn("⚠️ ยังไม่ได้รับผลจาก backend — รออีกนิด");
+            }
+          }, 800);
           return 100;
         }
         return prev + 1.5;
@@ -65,33 +123,41 @@ export function AnalyzingScreen({ onComplete, capturedImages, userConcerns }: An
     }, 100);
 
     return () => clearInterval(interval);
-  }, [onComplete]);
+  }, [onComplete, aiResult]);
 
-  // Phase updates based on progress
+  // =====================================================================================
+  // 🔁 เปลี่ยน phase ตาม progress
+  // =====================================================================================
   useEffect(() => {
     if (progress >= 25 && currentPhase < 1) setCurrentPhase(1);
     if (progress >= 50 && currentPhase < 2) setCurrentPhase(2);
     if (progress >= 75 && currentPhase < 3) setCurrentPhase(3);
   }, [progress, currentPhase]);
 
-  // Rotate through images
+  // =====================================================================================
+  // 🔄 สลับภาพขณะวิเคราะห์
+  // =====================================================================================
   useEffect(() => {
     const rotateInterval = setInterval(() => {
       setAnalyzingImageIndex((prev) => (prev + 1) % 3);
     }, 1000);
-
     return () => clearInterval(rotateInterval);
   }, []);
 
-  const titleText = 
-    t.language === 'th' ? 'กำลังวิเคราะห์...' :
-    t.language === 'en' ? 'Analyzing...' :
-    '分析中...';
 
-  const subtitleText = 
-    t.language === 'th' ? 'กำลังประมวลผลภาพ 3 มุมของคุณ' :
-    t.language === 'en' ? 'Processing your 3-angle photos' :
-    '正在处理您的三角照片';
+  const titleText =
+    t.language === "th"
+      ? "กำลังวิเคราะห์..."
+      : t.language === "en"
+      ? "Analyzing..."
+      : "分析中...";
+
+  const subtitleText =
+    t.language === "th"
+      ? "กำลังประมวลผลภาพ 3 มุมของคุณ"
+      : t.language === "en"
+      ? "Processing your 3-angle photos"
+      : "正在处理您的三角照片";
 
   return (
     <div className="min-h-screen relative" style={{
