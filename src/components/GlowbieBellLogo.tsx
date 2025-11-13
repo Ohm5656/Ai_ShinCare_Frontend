@@ -1,7 +1,7 @@
 import { motion } from 'motion/react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { Sparkles, Star } from 'lucide-react';
-import logoImage from 'figma:asset/a17aae9c561bd3549a86038318e99647bffc816a.png';
+import logoImage from "../assets/a17aae9c561bd3549a86038318e99647bffc816a.png";
 
 interface GlowbieBellLogoProps {
   size?: number;
