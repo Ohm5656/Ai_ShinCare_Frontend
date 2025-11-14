@@ -55,7 +55,7 @@ export function AnalyzingScreen({
   };
 
   // =====================================================================================
-  // 🚀 ส่งภาพไป backend เมื่อ mount
+  // 🚀 ส่งภาพไป backend เมื่อ mount (เวอร์ชันถูกต้อง 100%)
   // =====================================================================================
   useEffect(() => {
     async function sendImagesToBackend() {
@@ -65,24 +65,26 @@ export function AnalyzingScreen({
       }
 
       try {
-        const blobFront = await (await fetch(capturedImages.front)).blob();
-        const blobLeft = await (await fetch(capturedImages.left)).blob();
-        const blobRight = await (await fetch(capturedImages.right)).blob();
-
-        const formData = new FormData();
-        formData.append("img_front", blobFront, "front.jpg");
-        formData.append("img_left", blobLeft, "left.jpg");
-        formData.append("img_right", blobRight, "right.jpg");
-        formData.append("sex", userData?.gender || "female");
-        formData.append("age_range", userData?.age || "25-34");
-        formData.append("skin_type", userData?.skinType || "combination");
-        formData.append("sensitive", String(!!userData?.isSensitive));
-        formData.append("concerns", (userConcerns || []).join(","));
-
         console.log("📤 กำลังส่งภาพไป backend...");
+
+        // ส่ง Base64 JSON → backend
+        const payload = {
+          front: capturedImages.front,
+          left: capturedImages.left,
+          right: capturedImages.right,
+          sex: userData?.gender || "female",
+          age_range: userData?.age || "25-34",
+          skin_type: userData?.skinType || "combination",
+          sensitive: !!userData?.isSensitive,
+          concerns: (userConcerns || []).join(","),
+        };
+
         const res = await fetch("http://localhost:8000/analyze-face-full", {
           method: "POST",
-          body: formData,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
         });
 
         const data = await res.json();
@@ -91,8 +93,9 @@ export function AnalyzingScreen({
         if (data?.overall_score !== undefined) {
           setAiResult(data as SkinAnalyzeResponse);
         } else {
-          console.warn("⚠️ รูปแบบผลลัพธ์ไม่ตรงที่คาด:", data);
+          console.warn("⚠️ รูปแบบผลลัพธ์ไม่ตรง:", data);
         }
+
       } catch (err) {
         console.error("❌ ส่งภาพไม่สำเร็จ:", err);
       }
@@ -100,6 +103,8 @@ export function AnalyzingScreen({
 
     sendImagesToBackend();
   }, [capturedImages, userConcerns, userData]);
+
+
 
   // =====================================================================================
   // 🔄 Progress bar เดินจนถึง 100 แล้วเรียก onComplete(result)
