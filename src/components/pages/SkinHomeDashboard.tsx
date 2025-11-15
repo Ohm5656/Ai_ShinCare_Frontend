@@ -33,14 +33,14 @@ export function SkinHomeDashboard({
   const { t } = useLanguage();
 
   // ⭐ ใช้คะแนนล่าสุด ถ้ามี
-  const skinScore = latestScore ?? 0;
+  const skinScore = latestScore ?? 87;
 
   // ⭐ ใช้ dimension ล่าสุด
   const quickStats = [
     {
       icon: Waves,
       label: t.wrinkles,
-      score: latestDimensions?.wrinkles ?? 0,
+      score: latestDimensions?.wrinkles ?? 95,
       status: t.good,
       color: 'bg-mint-100 text-mint-700',
       gradient: 'from-mint-400 to-mint-500',
@@ -49,7 +49,7 @@ export function SkinHomeDashboard({
     {
       icon: ChevronsDown,
       label: t.sagging,
-      score: latestDimensions?.sagging ?? 0,
+      score: latestDimensions?.sagging ?? 87,
       status: t.good,
       color: 'bg-blue-100 text-blue-700',
       gradient: 'from-blue-400 to-blue-500',
@@ -58,7 +58,7 @@ export function SkinHomeDashboard({
     {
       icon: CircleDot,
       label: t.darkSpots,
-      score: latestDimensions?.pigmentation ?? 0,
+      score: latestDimensions?.pigmentation ?? 77,
       status: t.normal,
       color: 'bg-amber-100 text-amber-700',
       gradient: 'from-amber-400 to-amber-500',
@@ -67,7 +67,7 @@ export function SkinHomeDashboard({
     {
       icon: Sparkles,
       label: t.acne,
-      score: latestDimensions?.acne ?? 0,
+      score: latestDimensions?.acne ?? 74,
       status: t.good,
       color: 'bg-purple-100 text-purple-700',
       gradient: 'from-purple-400 to-purple-500',
@@ -76,7 +76,7 @@ export function SkinHomeDashboard({
     {
       icon: Flame,
       label: t.redness,
-      score: latestDimensions?.redness ?? 0,
+      score: latestDimensions?.redness ?? 85,
       status: t.normal,
       color: 'bg-rose-100 text-rose-700',
       gradient: 'from-rose-400 to-rose-500',
@@ -85,7 +85,7 @@ export function SkinHomeDashboard({
     {
       icon: Circle,
       label: t.pores,
-      score: latestDimensions?.texture ?? 0,
+      score: latestDimensions?.texture ?? 74,
       status: t.normal,
       color: 'bg-cyan-100 text-cyan-700',
       gradient: 'from-cyan-400 to-cyan-500',
@@ -94,7 +94,7 @@ export function SkinHomeDashboard({
     {
       icon: Palette,
       label: t.skinEvenness,
-      score: latestDimensions?.tone ?? 0,
+      score: latestDimensions?.tone ?? 81,
       status: t.veryGood,
       color: 'bg-yellow-100 text-yellow-700',
       gradient: 'from-yellow-400 to-yellow-500',
