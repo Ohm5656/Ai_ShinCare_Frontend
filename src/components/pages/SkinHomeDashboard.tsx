@@ -10,18 +10,37 @@ import { FloatingParticles } from '../animations/FloatingParticles';
 interface SkinHomeDashboardProps {
   userName?: string;
   onStartScan: () => void;
+  latestScore?: number;
+  latestDimensions?: {
+    wrinkles: number;
+    sagging: number;
+    pigmentation: number;
+    acne: number;
+    redness: number;
+    texture: number;
+    tone: number;
+  };
 }
 
-export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDashboardProps) {
+export function SkinHomeDashboard({
+  userName = 'Suda',
+  onStartScan,
+  latestScore,
+  latestDimensions
+}: SkinHomeDashboardProps) {
+
   const [viewMode, setViewMode] = useState<'circular' | 'radar'>('circular');
   const { t } = useLanguage();
-  const skinScore = 87;
 
+  // ⭐ ใช้คะแนนล่าสุด ถ้ามี
+  const skinScore = latestScore ?? 0;
+
+  // ⭐ ใช้ dimension ล่าสุด
   const quickStats = [
     {
       icon: Waves,
       label: t.wrinkles,
-      score: 85,
+      score: latestDimensions?.wrinkles ?? 0,
       status: t.good,
       color: 'bg-mint-100 text-mint-700',
       gradient: 'from-mint-400 to-mint-500',
@@ -30,7 +49,7 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
     {
       icon: ChevronsDown,
       label: t.sagging,
-      score: 80,
+      score: latestDimensions?.sagging ?? 0,
       status: t.good,
       color: 'bg-blue-100 text-blue-700',
       gradient: 'from-blue-400 to-blue-500',
@@ -39,7 +58,7 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
     {
       icon: CircleDot,
       label: t.darkSpots,
-      score: 75,
+      score: latestDimensions?.pigmentation ?? 0,
       status: t.normal,
       color: 'bg-amber-100 text-amber-700',
       gradient: 'from-amber-400 to-amber-500',
@@ -48,7 +67,7 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
     {
       icon: Sparkles,
       label: t.acne,
-      score: 82,
+      score: latestDimensions?.acne ?? 0,
       status: t.good,
       color: 'bg-purple-100 text-purple-700',
       gradient: 'from-purple-400 to-purple-500',
@@ -57,7 +76,7 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
     {
       icon: Flame,
       label: t.redness,
-      score: 72,
+      score: latestDimensions?.redness ?? 0,
       status: t.normal,
       color: 'bg-rose-100 text-rose-700',
       gradient: 'from-rose-400 to-rose-500',
@@ -66,7 +85,7 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
     {
       icon: Circle,
       label: t.pores,
-      score: 70,
+      score: latestDimensions?.texture ?? 0,
       status: t.normal,
       color: 'bg-cyan-100 text-cyan-700',
       gradient: 'from-cyan-400 to-cyan-500',
@@ -75,7 +94,7 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
     {
       icon: Palette,
       label: t.skinEvenness,
-      score: 88,
+      score: latestDimensions?.tone ?? 0,
       status: t.veryGood,
       color: 'bg-yellow-100 text-yellow-700',
       gradient: 'from-yellow-400 to-yellow-500',
@@ -83,15 +102,15 @@ export function SkinHomeDashboard({ userName = 'Suda', onStartScan }: SkinHomeDa
     },
   ];
 
-  // Prepare data for radar chart - 7 metrics
+  // ⭐ Radar chart (optional: ยังไม่ใช้คะแนนจริง)
   const radarData = [
-    { subject: t.wrinklesShort, value: 85 },
-    { subject: t.saggingShort, value: 80 },
-    { subject: t.darkSpotsShort, value: 75 },
-    { subject: t.acneShort, value: 82 },
-    { subject: t.rednessShort, value: 72 },
-    { subject: t.poresShort, value: 70 },
-    { subject: t.skinEvennessShort, value: 88 },
+    { subject: t.wrinklesShort, value: latestDimensions?.wrinkles ?? 0 },
+    { subject: t.saggingShort, value: latestDimensions?.sagging ?? 0 },
+    { subject: t.darkSpotsShort, value: latestDimensions?.pigmentation ?? 0 },
+    { subject: t.acneShort, value: latestDimensions?.acne ?? 0 },
+    { subject: t.rednessShort, value: latestDimensions?.redness ?? 0 },
+    { subject: t.poresShort, value: latestDimensions?.texture ?? 0 },
+    { subject: t.skinEvennessShort, value: latestDimensions?.tone ?? 0 },
   ];
 
   return (
