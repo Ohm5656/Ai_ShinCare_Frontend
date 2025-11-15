@@ -79,7 +79,7 @@ export function AnalyzingScreen({
           concerns: (userConcerns || []).join(","),
         };
 
-        const res = await fetch("http://localhost:8000/analyze-face-full", {
+        const res = await fetch("http://aishincarebackend-production.up.railway.app/analyze-face-full", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
