@@ -267,11 +267,17 @@ function AppContent() {
           <>
             <SkinHomeDashboard
               userName={profileData.fullName.split(' ')[0]}
+
+              // ⭐ ส่งผลล่าสุดเข้า Dashboard
+              latestScore={analyzeResult?.overall_score}
+              latestDimensions={analyzeResult?.dimension_scores}
+
               onStartScan={() => setCurrentScreen('scan')}
             />
             <BottomNavSkin activeTab="home" onTabChange={handleTabChange} />
           </>
         );
+
 
       // Face Scan Camera Screen
       case 'scan':
@@ -455,6 +461,8 @@ function AppContent() {
           <>
             <SkinHomeDashboard
               userName={profileData.fullName.split(' ')[0]}
+              latestScore={analyzeResult?.overall_score}
+              latestDimensions={analyzeResult?.dimension_scores}
               onStartScan={() => setCurrentScreen('scan')}
             />
             <BottomNavSkin activeTab="home" onTabChange={handleTabChange} />
