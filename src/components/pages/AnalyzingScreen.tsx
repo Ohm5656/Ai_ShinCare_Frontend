@@ -96,7 +96,7 @@ export function AnalyzingScreen({
         formData.append("concerns", (userConcerns || []).join(","));
 
         // ส่ง FormData → Backend ที่ Railway
-        const res = await fetch("https://eco-releases-intent-density.trycloudflare.com/analyze-face-full", {
+        const res = await fetch("https://clock-tours-warning-displayed.trycloudflare.com/analyze-face-full", {
           method: "POST",
           body: formData, // ❗ ห้ามใส่ headers
         });
