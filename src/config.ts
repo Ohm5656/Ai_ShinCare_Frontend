@@ -5,11 +5,12 @@
 // จะอ่านค่าจาก .env (ผ่าน Vite) โดยใช้ prefix: VITE_
 
 export const API_URL =
-  import.meta.env.VITE_API_URL || "https://eco-releases-intent-density.trycloudflare.com"; // fallback ถ้าไม่มี env
+  import.meta.env.VITE_API_URL || "https://clock-tours-warning-displayed.trycloudflare.com"; // fallback ถ้าไม่มี env
 
 // ตัวอย่างอื่น (ถ้าอยากขยายภายหลัง)
 // export const APP_NAME = "AI Skin Analyzer";
 // export const DEFAULT_DETECT_SIZE = 640;
+
 
 
 
