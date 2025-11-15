@@ -79,7 +79,7 @@ export function AnalyzingScreen({
           concerns: (userConcerns || []).join(","),
         };
 
-        const res = await fetch("https://9a180a5586fd.ngrok-free.app/analyze-face-full", {
+        const res = await fetch("https://8b67ff60863f.ngrok-free.app/analyze-face-full", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
