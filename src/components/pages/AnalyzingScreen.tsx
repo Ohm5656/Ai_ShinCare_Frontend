@@ -1,3 +1,7 @@
+// =====================================================================================
+// AnalyzingScreen.tsx (Full File — Only Backend Upload Block is Updated Correctly)
+// =====================================================================================
+
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { useLanguage } from "../../contexts/LanguageContext";
@@ -10,7 +14,6 @@ interface AnalyzingScreenProps {
   userData?: { gender?: string; age?: string; skinType?: string; isSensitive?: boolean };
 }
 
-// ✨ เพิ่ม type ตรงนี้
 type SkinAnalyzeResponse = {
   overall_score: number;
   dimension_scores: Record<string, number>;
@@ -55,7 +58,7 @@ export function AnalyzingScreen({
   };
 
   // =====================================================================================
-  // 🚀 ส่งภาพไป backend เมื่อ mount (เวอร์ชันถูกต้อง 100%)
+  // 🚀 ส่งภาพไป backend (FormData Version)
   // =====================================================================================
   useEffect(() => {
     async function sendImagesToBackend() {
@@ -67,30 +70,42 @@ export function AnalyzingScreen({
       try {
         console.log("📤 กำลังส่งภาพไป backend...");
 
-        // ส่ง Base64 JSON → backend
-        const payload = {
-          front: capturedImages.front,
-          left: capturedImages.left,
-          right: capturedImages.right,
-          sex: userData?.gender || "female",
-          age_range: userData?.age || "25-34",
-          skin_type: userData?.skinType || "combination",
-          sensitive: !!userData?.isSensitive,
-          concerns: (userConcerns || []).join(","),
-        };
+        // Base64 → File
+        function dataURLtoFile(dataUrl: string, filename: string) {
+          const arr = dataUrl.split(",");
+          const mime = arr[0].match(/:(.*?);/)![1];
+          const bstr = atob(arr[1]);
+          let n = bstr.length;
+          const u8arr = new Uint8Array(n);
+          while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+          }
+          return new File([u8arr], filename, { type: mime });
+        }
 
+        // สร้าง FormData
+        const formData = new FormData();
+        formData.append("image_front", dataURLtoFile(capturedImages.front, "front.jpg"));
+        formData.append("image_left", dataURLtoFile(capturedImages.left, "left.jpg"));
+        formData.append("image_right", dataURLtoFile(capturedImages.right, "right.jpg"));
+
+        formData.append("sex", userData?.gender || "female");
+        formData.append("age_range", userData?.age || "25-34");
+        formData.append("skin_type", userData?.skinType || "combination");
+        formData.append("sensitive", String(!!userData?.isSensitive));
+        formData.append("concerns", (userConcerns || []).join(","));
+
+        // ส่ง FormData → Backend ที่ Railway
         const res = await fetch("https://eco-releases-intent-density.trycloudflare.com/analyze-face-full", {
           method: "POST",
-          body: formData,  // ใช้เฉพาะอันนี้พอ ห้ามมี body อื่น
-          // ❌ headers ห้ามใส่ Content-Type ตอนส่งไฟล์!
+          body: formData, // ❗ ห้ามใส่ headers
         });
-
 
         const data = await res.json();
         console.log("📥 ผลลัพธ์จาก backend:", data);
 
         if (data?.overall_score !== undefined) {
-          setAiResult(data as SkinAnalyzeResponse);
+          setAiResult(data);
         } else {
           console.warn("⚠️ รูปแบบผลลัพธ์ไม่ตรง:", data);
         }
@@ -103,10 +118,8 @@ export function AnalyzingScreen({
     sendImagesToBackend();
   }, [capturedImages, userConcerns, userData]);
 
-
-
   // =====================================================================================
-  // 🔄 Progress bar เดินจนถึง 100 แล้วเรียก onComplete(result)
+  // 🔄 Progress Bar Logic (unchanged)
   // =====================================================================================
   useEffect(() => {
     const interval = setInterval(() => {
@@ -114,11 +127,7 @@ export function AnalyzingScreen({
         if (prev >= 100) {
           clearInterval(interval);
           setTimeout(() => {
-            if (aiResult) {
-              onComplete(aiResult); // ✅ ส่งผลลัพธ์จริง
-            } else {
-              console.warn("⚠️ ยังไม่ได้รับผลจาก backend — รออีกนิด");
-            }
+            if (aiResult) onComplete(aiResult);
           }, 800);
           return 100;
         }
@@ -130,17 +139,15 @@ export function AnalyzingScreen({
   }, [onComplete, aiResult]);
 
   // =====================================================================================
-  // 🔁 เปลี่ยน phase ตาม progress
+  // Effects below — unchanged (UI only)
   // =====================================================================================
+
   useEffect(() => {
     if (progress >= 25 && currentPhase < 1) setCurrentPhase(1);
     if (progress >= 50 && currentPhase < 2) setCurrentPhase(2);
     if (progress >= 75 && currentPhase < 3) setCurrentPhase(3);
   }, [progress, currentPhase]);
 
-  // =====================================================================================
-  // 🔄 สลับภาพขณะวิเคราะห์
-  // =====================================================================================
   useEffect(() => {
     const rotateInterval = setInterval(() => {
       setAnalyzingImageIndex((prev) => (prev + 1) % 3);
