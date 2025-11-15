@@ -79,7 +79,7 @@ export function AnalyzingScreen({
           concerns: (userConcerns || []).join(","),
         };
 
-        const res = await fetch("https://aishincarebackend-production.up.railway.app/analyze-face-full", {
+        const res = await fetch("https://eco-releases-intent-density.trycloudflare.com/analyze-face-full", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
