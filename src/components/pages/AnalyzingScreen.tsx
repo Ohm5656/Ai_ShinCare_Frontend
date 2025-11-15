@@ -81,7 +81,7 @@ export function AnalyzingScreen({
         concerns: (userConcerns || []).join(","),
       };
 
-      const res = await fetch("https://clock-tours-warning-displayed.trycloudflare.com/analyze-face-full", {
+      const res = await fetch("https://aishincarebackend-production.up.railway.app/analyze-face-full", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
