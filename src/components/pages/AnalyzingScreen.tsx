@@ -61,62 +61,48 @@ export function AnalyzingScreen({
   // 🚀 ส่งภาพไป backend (FormData Version)
   // =====================================================================================
   useEffect(() => {
-    async function sendImagesToBackend() {
-      if (!capturedImages?.front || !capturedImages?.left || !capturedImages?.right) {
-        console.warn("⚠️ capturedImages ยังไม่ครบ 3 มุม");
-        return;
-      }
-
-      try {
-        console.log("📤 กำลังส่งภาพไป backend...");
-
-        // Base64 → File
-        function dataURLtoFile(dataUrl: string, filename: string) {
-          const arr = dataUrl.split(",");
-          const mime = arr[0].match(/:(.*?);/)![1];
-          const bstr = atob(arr[1]);
-          let n = bstr.length;
-          const u8arr = new Uint8Array(n);
-          while (n--) {
-            u8arr[n] = bstr.charCodeAt(n);
-          }
-          return new File([u8arr], filename, { type: mime });
-        }
-
-        // สร้าง FormData
-        const formData = new FormData();
-        formData.append("image_front", dataURLtoFile(capturedImages.front, "front.jpg"));
-        formData.append("image_left", dataURLtoFile(capturedImages.left, "left.jpg"));
-        formData.append("image_right", dataURLtoFile(capturedImages.right, "right.jpg"));
-
-        formData.append("sex", userData?.gender || "female");
-        formData.append("age_range", userData?.age || "25-34");
-        formData.append("skin_type", userData?.skinType || "combination");
-        formData.append("sensitive", String(!!userData?.isSensitive));
-        formData.append("concerns", (userConcerns || []).join(","));
-
-        // ส่ง FormData → Backend ที่ Railway
-        const res = await fetch("https://clock-tours-warning-displayed.trycloudflare.com/analyze-face-full", {
-          method: "POST",
-          body: formData, // ❗ ห้ามใส่ headers
-        });
-
-        const data = await res.json();
-        console.log("📥 ผลลัพธ์จาก backend:", data);
-
-        if (data?.overall_score !== undefined) {
-          setAiResult(data);
-        } else {
-          console.warn("⚠️ รูปแบบผลลัพธ์ไม่ตรง:", data);
-        }
-
-      } catch (err) {
-        console.error("❌ ส่งภาพไม่สำเร็จ:", err);
-      }
+  async function sendImagesToBackend() {
+    if (!capturedImages?.front || !capturedImages?.left || !capturedImages?.right) {
+      console.warn("⚠️ capturedImages ยังไม่ครบ 3 มุม");
+      return;
     }
 
-    sendImagesToBackend();
-  }, [capturedImages, userConcerns, userData]);
+    try {
+      console.log("📤 กำลังส่งภาพไป backend (JSON mode)...");
+
+      const payload = {
+        front: capturedImages.front,
+        left: capturedImages.left,
+        right: capturedImages.right,
+        sex: userData?.gender || "female",
+        age_range: userData?.age || "25-34",
+        skin_type: userData?.skinType || "combination",
+        sensitive: !!userData?.isSensitive,
+        concerns: (userConcerns || []).join(","),
+      };
+
+      const res = await fetch("https://clock-tours-warning-displayed.trycloudflare.com/analyze-face-full", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      console.log("📥 ผลจาก backend:", data);
+
+      if (data?.overall_score !== undefined) {
+        setAiResult(data);
+      } else {
+        console.warn("⚠️ ผลลัพธ์ไม่ตรงรูปแบบ:", data);
+      }
+
+    } catch (err) {
+      console.error("❌ ส่งภาพไม่สำเร็จ:", err);
+    }
+  }
+
+  sendImagesToBackend();
+}, [capturedImages, userConcerns, userData]);
 
   // =====================================================================================
   // 🔄 Progress Bar Logic (unchanged)
