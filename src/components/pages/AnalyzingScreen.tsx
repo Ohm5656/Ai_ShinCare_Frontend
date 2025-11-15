@@ -81,11 +81,10 @@ export function AnalyzingScreen({
 
         const res = await fetch("https://eco-releases-intent-density.trycloudflare.com/analyze-face-full", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
+          body: formData,  // ใช้เฉพาะอันนี้พอ ห้ามมี body อื่น
+          // ❌ headers ห้ามใส่ Content-Type ตอนส่งไฟล์!
         });
+
 
         const data = await res.json();
         console.log("📥 ผลลัพธ์จาก backend:", data);
