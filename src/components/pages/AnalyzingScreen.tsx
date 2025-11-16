@@ -116,7 +116,10 @@ export function AnalyzingScreen({
           clearInterval(interval);
           setTimeout(() => {
             if (aiResult) {
-              onComplete(aiResult); // ✅ ส่งผลลัพธ์จริง
+              localStorage.setItem("lastSkinScan", JSON.stringify(aiResult)); // ⭐ เก็บผลแสกน
+              onComplete(aiResult);
+            }
+ // ✅ ส่งผลลัพธ์จริง
             } else {
               console.warn("⚠️ ยังไม่ได้รับผลจาก backend — รออีกนิด");
             }
