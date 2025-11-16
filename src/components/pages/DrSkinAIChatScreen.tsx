@@ -108,25 +108,24 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
     setTimeout(() => setShowSendEffect(false), 1000);
 
     try {
-      // ⭐⭐ ใช้ endpoint ที่ถูกต้อง → /ask-ai
       const res = await axios.post(`${API_URL}/ask-ai`, {
-        message: newUserMessage.text,
+        prompt: newUserMessage.text,  // <— ต้องเป็น prompt
       });
+
+      console.log("BACKEND RESPONSE:", res.data);   // <— สำคัญมาก! Debug
 
       const aiResponse: Message = {
         id: newUserMessage.id + 1,
-        text: res.data.reply,
+        text: res.data.answer ?? "[Error: no answer]", // <— backend field จริง
         sender: 'ai',
         timestamp: new Date(),
       };
 
       setMessages((prev) => [...prev, aiResponse]);
-    } catch (error) {
-      console.error('Chat API error:', error);
 
-      // ===============================
-      // 🟨 Fallback (Offline engine)
-      // ===============================
+    } catch (error) {
+      console.error("Chat API error:", error);
+
       const fallback: Message = {
         id: newUserMessage.id + 1,
         text: aiEngineRef.current.generateResponse(newUserMessage.text),
@@ -136,6 +135,7 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
 
       setMessages((prev) => [...prev, fallback]);
     }
+
 
     setIsTyping(false);
   };
