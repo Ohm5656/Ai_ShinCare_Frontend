@@ -73,9 +73,6 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
     }
   };
 
-  // ===============================
-  // ✉️ Send Message (uses backend GPT)
-  // ===============================
   const handleSendMessage = async () => {
     if (!inputMessage.trim() && !selectedImage) return;
 
@@ -108,15 +105,22 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
     setTimeout(() => setShowSendEffect(false), 1000);
 
     try {
+      // ดึงผลสแกนล่าสุดจาก localStorage
+      const lastScan = JSON.parse(localStorage.getItem("lastSkinScan") || "{}");
+
+      console.log("LAST SKIN SCAN SENT TO AI:", lastScan);
+
       const res = await axios.post(`${API_URL}/ask-ai`, {
-        prompt: newUserMessage.text,  // <— ต้องเป็น prompt
+        prompt: newUserMessage.text,
+        profile: lastScan?.profile ?? null,
+        scores: lastScan?.dimension_scores ?? null
       });
 
-      console.log("BACKEND RESPONSE:", res.data);   // <— สำคัญมาก! Debug
+      console.log("BACKEND RESPONSE:", res.data);
 
       const aiResponse: Message = {
         id: newUserMessage.id + 1,
-        text: res.data.answer ?? "[Error: no answer]", // <— backend field จริง
+        text: res.data.answer ?? "[Error: no answer]",
         sender: 'ai',
         timestamp: new Date(),
       };
@@ -136,9 +140,9 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
       setMessages((prev) => [...prev, fallback]);
     }
 
-
     setIsTyping(false);
   };
+
 
   // ===============================
   // ⚡ Quick Replies
