@@ -1,19 +1,18 @@
-import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Send, Plus, Sparkles, Image as ImageIcon } from 'lucide-react';
-import { Avatar, AvatarFallback } from '../ui/avatar';
-import { useLanguage } from '../../contexts/LanguageContext';
-import { AIResponseEngine } from '../../utils/aiResponseEngine';
-import axios from 'axios';
-import drAILogo from 'figma:asset/9e2bc221ce12a816af58bdf5aac2d784fd135893.png';
+import { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { Send, Sparkles, Image as ImageIcon } from "lucide-react";
+import { Avatar, AvatarFallback } from "../ui/avatar";
+import { useLanguage } from "../../contexts/LanguageContext";
+import { AIResponseEngine } from "../../utils/aiResponseEngine";
+import axios from "axios";
+import drAILogo from "figma:asset/9e2bc221ce12a816af58bdf5aac2d784fd135893.png";
 
-const API_URL = 'https://aishincarebackend-production.up.railway.app'; 
-// ⭐ URL backend จริง (ไม่ใส่ /ask-ai ตรงนี้)
+const API_URL = "https://aishincarebackend-production.up.railway.app";
 
 interface Message {
   id: number;
   text: string;
-  sender: 'user' | 'ai';
+  sender: "user" | "ai";
   timestamp: Date;
   image?: string;
 }
@@ -24,136 +23,162 @@ interface DrSkinAIChatScreenProps {
 
 export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
   const { t } = useLanguage();
-  
-  // Initialize AI Engine
-  const aiEngineRef = useRef(new AIResponseEngine(t.language as 'th' | 'en' | 'zh'));
-  
-  // Update AI engine language when language changes
-  useEffect(() => {
-    aiEngineRef.current.setLanguage(t.language as 'th' | 'en' | 'zh');
-  }, [t.language]);
-  
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      text: aiEngineRef.current.getGreeting(),
-      sender: 'ai',
-      timestamp: new Date(),
-    },
-  ]);
-  const [inputMessage, setInputMessage] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const [showSendEffect, setShowSendEffect] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Get quick replies from AI engine
+  // ⭐ สร้าง AI Engine (1 ครั้งเท่านั้น)
+  const aiEngineRef = useRef(
+    new AIResponseEngine(t.language as "th" | "en" | "zh")
+  );
+
+  // ⭐ อัปเดตภาษาเมื่อเปลี่ยนภาษา
+  useEffect(() => {
+    aiEngineRef.current.setLanguage(t.language as "th" | "en" | "zh");
+  }, [t.language]);
+
+  // ======================================
+  // ⭐ โหลดผลสแกนล่าสุดมาเป็น "ข้อความแรก"
+  // ======================================
+  const [messages, setMessages] = useState<Message[]>([]);
+
+  useEffect(() => {
+    const lastScan = JSON.parse(localStorage.getItem("lastSkinScan") || "{}");
+
+    if (lastScan?.ai_advice) {
+      setMessages([
+        {
+          id: 1,
+          text: lastScan.ai_advice,
+          sender: "ai",
+          timestamp: new Date(),
+        },
+      ]);
+    } else {
+      setMessages([
+        {
+          id: 1,
+          text: aiEngineRef.current.getGreeting(),
+          sender: "ai",
+          timestamp: new Date(),
+        },
+      ]);
+    }
+  }, []);
+
+  // ======================================
+  // UI States
+  // ======================================
+  const [inputMessage, setInputMessage] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
   const quickReplies = aiEngineRef.current.getSuggestedQuestions();
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  // ===============================
+  // ======================================
   // 📸 Upload Image
-  // ===============================
+  // ======================================
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setSelectedImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => setSelectedImage(reader.result as string);
+    reader.readAsDataURL(file);
   };
 
+  // ======================================
+  // ⭐ ส่งข้อความไป Backend + ใส่ผลสแกนล่าสุดด้วย
+  // ======================================
   const handleSendMessage = async () => {
     if (!inputMessage.trim() && !selectedImage) return;
 
     const userText =
       inputMessage ||
       (selectedImage
-        ? t.language === 'th'
-          ? 'ส่งรูปภาพ'
-          : t.language === 'en'
-          ? 'Sent an image'
-          : '发送了图片'
-        : '');
+        ? t.language === "th"
+          ? "ส่งรูปภาพ"
+          : t.language === "en"
+          ? "Sent an image"
+          : "发送了图片"
+        : "");
 
-    const newUserMessage: Message = {
+    const userMsg: Message = {
       id: messages.length + 1,
       text: userText,
-      sender: 'user',
+      sender: "user",
       timestamp: new Date(),
       image: selectedImage || undefined,
     };
 
-    // 🟦 Add user message
-    setMessages((prev) => [...prev, newUserMessage]);
-    setInputMessage('');
+    setMessages((prev) => [...prev, userMsg]);
+    setInputMessage("");
     setSelectedImage(null);
     setIsTyping(true);
 
-    // 🎇 Send button effect
-    setShowSendEffect(true);
-    setTimeout(() => setShowSendEffect(false), 1000);
-
     try {
-      // ดึงผลสแกนล่าสุดจาก localStorage
       const lastScan = JSON.parse(localStorage.getItem("lastSkinScan") || "{}");
 
-      console.log("LAST SKIN SCAN SENT TO AI:", lastScan);
-
       const res = await axios.post(`${API_URL}/ask-ai`, {
-        prompt: newUserMessage.text,
+        prompt: userMsg.text,
         profile: lastScan?.profile ?? null,
-        scores: lastScan?.dimension_scores ?? null
+        scores: lastScan?.dimension_scores ?? null,
       });
 
-      console.log("BACKEND RESPONSE:", res.data);
-
       const aiResponse: Message = {
-        id: newUserMessage.id + 1,
+        id: userMsg.id + 1,
         text: res.data.answer ?? "[Error: no answer]",
-        sender: 'ai',
+        sender: "ai",
         timestamp: new Date(),
       };
 
       setMessages((prev) => [...prev, aiResponse]);
-
     } catch (error) {
       console.error("Chat API error:", error);
 
-      const fallback: Message = {
-        id: newUserMessage.id + 1,
-        text: aiEngineRef.current.generateResponse(newUserMessage.text),
-        sender: 'ai',
+      const lastScan = JSON.parse(localStorage.getItem("lastSkinScan") || "{}");
+
+      const fallback = `
+ผมตอบให้จากข้อมูลสแกนล่าสุดของคุณนะครับ 😊
+
+• เพศ: ${lastScan?.profile?.sex || "-"}
+• อายุ: ${lastScan?.profile?.age_range || "-"}
+• ประเภทผิว: ${lastScan?.profile?.skin_type || "-"}
+• ผิวแพ้ง่าย: ${lastScan?.profile?.sensitive ? "ใช่" : "ไม่ใช่"}
+• คะแนนรวมผิว: ${lastScan?.overall_score || "-"}/100
+
+คำตอบเบื้องต้น:
+${aiEngineRef.current.generateResponse(userMsg.text)}
+      `.trim();
+
+      const aiMsg: Message = {
+        id: userMsg.id + 1,
+        text: fallback,
+        sender: "ai",
         timestamp: new Date(),
       };
 
-      setMessages((prev) => [...prev, fallback]);
+      setMessages((prev) => [...prev, aiMsg]);
     }
 
     setIsTyping(false);
   };
 
-
-  // ===============================
+  // ======================================
   // ⚡ Quick Replies
-  // ===============================
-  const handleQuickReply = (reply: string) => {
-    setInputMessage(reply);
-    setTimeout(() => {
-      handleSendMessage();
-    }, 120);
+  // ======================================
+  const handleQuickReply = (text: string) => {
+    setInputMessage(text);
+    setTimeout(handleSendMessage, 120);
   };
-
+  
   return (
     <div className="min-h-screen flex flex-col relative">
       {/* Medical AI Gradient Background */}
