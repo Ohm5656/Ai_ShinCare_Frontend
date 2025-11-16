@@ -118,7 +118,6 @@ export function AnalyzingScreen({
             if (aiResult) {
               localStorage.setItem("lastSkinScan", JSON.stringify(aiResult)); // ⭐ เก็บผลแสกน
               onComplete(aiResult);
-            }
  // ✅ ส่งผลลัพธ์จริง
             } else {
               console.warn("⚠️ ยังไม่ได้รับผลจาก backend — รออีกนิด");
