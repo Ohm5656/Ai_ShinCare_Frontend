@@ -4,7 +4,11 @@ import { Send, Plus, Sparkles, Image as ImageIcon } from 'lucide-react';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { AIResponseEngine } from '../../utils/aiResponseEngine';
+import axios from 'axios';
 import drAILogo from 'figma:asset/9e2bc221ce12a816af58bdf5aac2d784fd135893.png';
+
+const API_URL = 'https://aishincarebackend-production.up.railway.app'; 
+// ⭐ URL backend จริง (ไม่ใส่ /ask-ai ตรงนี้)
 
 interface Message {
   id: number;
@@ -55,6 +59,9 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
     scrollToBottom();
   }, [messages]);
 
+  // ===============================
+  // 📸 Upload Image
+  // ===============================
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -66,44 +73,81 @@ export function DrSkinAIChatScreen({ onBack }: DrSkinAIChatScreenProps) {
     }
   };
 
-  const handleSendMessage = () => {
+  // ===============================
+  // ✉️ Send Message (uses backend GPT)
+  // ===============================
+  const handleSendMessage = async () => {
     if (!inputMessage.trim() && !selectedImage) return;
+
+    const userText =
+      inputMessage ||
+      (selectedImage
+        ? t.language === 'th'
+          ? 'ส่งรูปภาพ'
+          : t.language === 'en'
+          ? 'Sent an image'
+          : '发送了图片'
+        : '');
 
     const newUserMessage: Message = {
       id: messages.length + 1,
-      text: inputMessage || (selectedImage ? t.language === 'th' ? 'ส่งรูปภาพ' : t.language === 'en' ? 'Sent an image' : '发送了图片' : ''),
+      text: userText,
       sender: 'user',
       timestamp: new Date(),
       image: selectedImage || undefined,
     };
 
+    // 🟦 Add user message
     setMessages((prev) => [...prev, newUserMessage]);
     setInputMessage('');
     setSelectedImage(null);
     setIsTyping(true);
-    
-    // Show send effect
+
+    // 🎇 Send button effect
     setShowSendEffect(true);
     setTimeout(() => setShowSendEffect(false), 1000);
 
-    // Simulate AI response with enhanced AI engine
-    setTimeout(() => {
+    try {
+      // ⭐⭐ ใช้ endpoint ที่ถูกต้อง → /ask-ai
+      const res = await axios.post(`${API_URL}/ask-ai`, {
+        message: newUserMessage.text,
+      });
+
       const aiResponse: Message = {
-        id: messages.length + 2,
-        text: aiEngineRef.current.generateResponse(inputMessage),
+        id: newUserMessage.id + 1,
+        text: res.data.reply,
         sender: 'ai',
         timestamp: new Date(),
       };
+
       setMessages((prev) => [...prev, aiResponse]);
-      setIsTyping(false);
-    }, 1500);
+    } catch (error) {
+      console.error('Chat API error:', error);
+
+      // ===============================
+      // 🟨 Fallback (Offline engine)
+      // ===============================
+      const fallback: Message = {
+        id: newUserMessage.id + 1,
+        text: aiEngineRef.current.generateResponse(newUserMessage.text),
+        sender: 'ai',
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, fallback]);
+    }
+
+    setIsTyping(false);
   };
 
+  // ===============================
+  // ⚡ Quick Replies
+  // ===============================
   const handleQuickReply = (reply: string) => {
     setInputMessage(reply);
     setTimeout(() => {
       handleSendMessage();
-    }, 100);
+    }, 120);
   };
 
   return (

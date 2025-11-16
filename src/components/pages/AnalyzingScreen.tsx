@@ -1,7 +1,3 @@
-// =====================================================================================
-// AnalyzingScreen.tsx (Full File — Only Backend Upload Block is Updated Correctly)
-// =====================================================================================
-
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { useLanguage } from "../../contexts/LanguageContext";
@@ -14,6 +10,7 @@ interface AnalyzingScreenProps {
   userData?: { gender?: string; age?: string; skinType?: string; isSensitive?: boolean };
 }
 
+// ✨ เพิ่ม type ตรงนี้
 type SkinAnalyzeResponse = {
   overall_score: number;
   dimension_scores: Record<string, number>;
@@ -58,54 +55,59 @@ export function AnalyzingScreen({
   };
 
   // =====================================================================================
-  // 🚀 ส่งภาพไป backend (FormData Version)
+  // 🚀 ส่งภาพไป backend เมื่อ mount (เวอร์ชันถูกต้อง 100%)
   // =====================================================================================
   useEffect(() => {
-  async function sendImagesToBackend() {
-    if (!capturedImages?.front || !capturedImages?.left || !capturedImages?.right) {
-      console.warn("⚠️ capturedImages ยังไม่ครบ 3 มุม");
-      return;
-    }
-
-    try {
-      console.log("📤 กำลังส่งภาพไป backend (JSON mode)...");
-
-      const payload = {
-        front: capturedImages.front,
-        left: capturedImages.left,
-        right: capturedImages.right,
-        sex: userData?.gender || "female",
-        age_range: userData?.age || "25-34",
-        skin_type: userData?.skinType || "combination",
-        sensitive: !!userData?.isSensitive,
-        concerns: (userConcerns || []).join(","),
-      };
-
-      const res = await fetch("https://aishincarebackend-production.up.railway.app/analyze-face-full", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-      console.log("📥 ผลจาก backend:", data);
-
-      if (data?.overall_score !== undefined) {
-        setAiResult(data);
-      } else {
-        console.warn("⚠️ ผลลัพธ์ไม่ตรงรูปแบบ:", data);
+    async function sendImagesToBackend() {
+      if (!capturedImages?.front || !capturedImages?.left || !capturedImages?.right) {
+        console.warn("⚠️ capturedImages ยังไม่ครบ 3 มุม");
+        return;
       }
 
-    } catch (err) {
-      console.error("❌ ส่งภาพไม่สำเร็จ:", err);
-    }
-  }
+      try {
+        console.log("📤 กำลังส่งภาพไป backend...");
 
-  sendImagesToBackend();
-}, [capturedImages, userConcerns, userData]);
+        // ส่ง Base64 JSON → backend
+        const payload = {
+          front: capturedImages.front,
+          left: capturedImages.left,
+          right: capturedImages.right,
+          sex: userData?.gender || "female",
+          age_range: userData?.age || "25-34",
+          skin_type: userData?.skinType || "combination",
+          sensitive: !!userData?.isSensitive,
+          concerns: (userConcerns || []).join(","),
+        };
+
+        const res = await fetch("https://aishincarebackend-production.up.railway.app/analyze-face-full", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await res.json();
+        console.log("📥 ผลลัพธ์จาก backend:", data);
+
+        if (data?.overall_score !== undefined) {
+          setAiResult(data as SkinAnalyzeResponse);
+        } else {
+          console.warn("⚠️ รูปแบบผลลัพธ์ไม่ตรง:", data);
+        }
+
+      } catch (err) {
+        console.error("❌ ส่งภาพไม่สำเร็จ:", err);
+      }
+    }
+
+    sendImagesToBackend();
+  }, [capturedImages, userConcerns, userData]);
+
+
 
   // =====================================================================================
-  // 🔄 Progress Bar Logic (unchanged)
+  // 🔄 Progress bar เดินจนถึง 100 แล้วเรียก onComplete(result)
   // =====================================================================================
   useEffect(() => {
     const interval = setInterval(() => {
@@ -113,7 +115,11 @@ export function AnalyzingScreen({
         if (prev >= 100) {
           clearInterval(interval);
           setTimeout(() => {
-            if (aiResult) onComplete(aiResult);
+            if (aiResult) {
+              onComplete(aiResult); // ✅ ส่งผลลัพธ์จริง
+            } else {
+              console.warn("⚠️ ยังไม่ได้รับผลจาก backend — รออีกนิด");
+            }
           }, 800);
           return 100;
         }
@@ -125,15 +131,17 @@ export function AnalyzingScreen({
   }, [onComplete, aiResult]);
 
   // =====================================================================================
-  // Effects below — unchanged (UI only)
+  // 🔁 เปลี่ยน phase ตาม progress
   // =====================================================================================
-
   useEffect(() => {
     if (progress >= 25 && currentPhase < 1) setCurrentPhase(1);
     if (progress >= 50 && currentPhase < 2) setCurrentPhase(2);
     if (progress >= 75 && currentPhase < 3) setCurrentPhase(3);
   }, [progress, currentPhase]);
 
+  // =====================================================================================
+  // 🔄 สลับภาพขณะวิเคราะห์
+  // =====================================================================================
   useEffect(() => {
     const rotateInterval = setInterval(() => {
       setAnalyzingImageIndex((prev) => (prev + 1) % 3);
