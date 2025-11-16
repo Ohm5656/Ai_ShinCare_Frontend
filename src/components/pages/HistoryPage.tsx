@@ -309,4 +309,3 @@ const currentTimeframe = timeframes.find(t => t.id === selectedTimeframe);
       </div>
     </div>
   );
-}
