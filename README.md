@@ -1,6 +1,6 @@
 <img src="./assets/logo.jpg" width="55" align="left" />
 
-# GlowbieBell – AI Skin Analyzer Backend
+# GlowbieBell – AI Skin Analyzer Frontend
 <br>
 
 GlowbieBell is a next-generation AI-powered multi-view skin analysis engine, designed specifically for Asian skin tones (Fitzpatrick III–V).  
