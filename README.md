@@ -88,138 +88,46 @@ Resulting in:
 
 ---
 
-### 🔹 GPT-4o Dermatology Intelligence
-
-Two specialized outputs:
-
-#### 1) Long Advice (8–12 lines)
-- Cleanser / Treatment / Moisturizer / Sunscreen  
-- Lifestyle recommendations  
-- Sensitivity-aware caution notes  
-
-#### 2) Short Highlights (JSON)
-Perfect for result screens:
-
-```json
-{
-  "highlights_short": ["Skin texture is smooth", "Hydration is good"],
-  "improvements_short": ["Slight redness detected", "Uneven tone in cheek area"]
-}
+###  Installation & Setup
+1. Clone Project
+```
+git clone https://github.com/Ohm5656/Ai_SkinCare_Frontend.git
+cd Ai_SkinCare_Frontend
 ```
 
-🧩 System Architecture
-User (Frontend)
-     |
-     | Base64 (front/left/right)
-     v
-GlowbieBell Backend (FastAPI)
-     |
-     |-- WrinkleNet (ONNX)
-     |-- ViT (pigment / acne / redness)
-     |-- U-Net (texture)
-     |-- FaceMesh Geometry (sagging)
-     |-- LAB DeltaE (tone)
-     |
-     |--> SkinFusion Model
-     |
-     |--> GPT-4o (long advice + short summaries)
-     |
-     v
-Final Skin Report JSON
-
-
-🗂 Repository Structure
-Ai_SkinCare_Backend/
-│
-├── analyzers/
-│   ├── acne_vit.py
-│   ├── pigmentation_vit.py
-│   ├── redness_vit_or_hemo.py
-│   ├── sagging_facemesh.py
-│   ├── tone_lab.py
-│   ├── texture_unet_or_opencv.py
-│   └── wrinkles_ffhq.py
-│
-├── models/                # Local ONNX + ViT weights
-├── main.py                # FASTAPI backend
-├── skin_fusion_model.py   # Score fusion engine
-├── requirements.txt
-├── .env.example
-└── README.md
-
-⚙️ Installation & Setup
-📥 1. Clone Project
-git clone https://github.com/Ohm5656/Ai_SkinCare_Backend.git
-cd Ai_SkinCare_Backend
-
-🧬 2. Create Virtual Environment
+2. Create Virtual Environment
+```
 python -m venv .venv
 .venv/Scripts/activate          # Windows
 source .venv/bin/activate       # Mac/Linux
-
-📦 3. Install Dependencies
+```
+3. Install Dependencies
+```
 pip install -r requirements.txt
-
-🔐 4. Create .env File
+```
+4. Create .env File
+```
 cp .env.example .env
+```
 
 
-Edit .env:
-
-OPENAI_API_KEY=sk-xxxx
-REDNESS_MODEL=face-redness-vit
-
-▶️ Running the Backend Locally
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+### Running the Frontend Locally
+```
+npm run dev
+```
 
 
-Open API docs:
 
-http://localhost:8000/docs
 
-http://localhost:8000/redoc
+### Future Improvements
 
-🔥 Main API Endpoint
-POST /analyze-face-full
-Request Body
-{
-  "front": "base64 string...",
-  "left": "base64 string...",
-  "right": "base64 string...",
-  "sex": "female",
-  "age_range": "25-34",
-  "skin_type": "combination",
-  "sensitive": true,
-  "concerns": "acne,pigmentation"
-}
-
-🌐 Deploying to Railway
-1️⃣ Connect GitHub Repo
-2️⃣ Railway auto-detects Python → builds container
-3️⃣ Add Environment Variables
-OPENAI_API_KEY=
-REDNESS_MODEL=
-
-4️⃣ Deploy → get public URL
-5️⃣ Update frontend API URL
-
-Done 🎉
-
-🔭 Future Improvements
-
-YOLO-based facial region segmentation
-
-3D face mesh depth mapping
-
-Real-time skin tracking
-
-Dark Spot progression model
-
-Personalized skincare product matching
+- YOLO-based facial region segmentation
+- 3D face mesh depth mapping
+- Real-time skin tracking
+- Dark Spot progression model
+- Personalized skincare product matching
 
 👤 Author
-
 Natdanai Lunaha(Ohm)
 
-GlowbieBell – Advanced Skin AI Platform
 
